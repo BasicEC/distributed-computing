@@ -13,12 +13,12 @@ int send(void *self, local_id dst, const Message *msg)
     if (pipefd < 0)
         return pipefd;
 
-    w_resulat = send_msg(pipefd, msg);
+    w_result = send_msg(pipefd, msg);
 
     if (w_result < 0)
         return w_result;
 
-    return 0
+    return 0;
 }
 
 int send_multicast(void *self, const Message *msg)

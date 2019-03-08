@@ -164,7 +164,7 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    fevents_log = fopen(evengs_log, "w+");
+    fevents_log = fopen(events_log, "w+");
 	fpipes_log = fopen(pipes_log, "w+");
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);

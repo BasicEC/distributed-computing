@@ -4,10 +4,10 @@
 
 int get_w_pipefd_by_id(proc_info_t *self, local_id dst)
 {
-    return self->connections[dst]->write;
+    return self->connections[dst].write;
 }
 
 int get_r_pipefd_by_id(proc_info_t *self, local_id dst)
 {
-    return self->connections[dst]->read;
+    return self->connections[dst].read;
 }
