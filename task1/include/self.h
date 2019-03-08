@@ -13,7 +13,7 @@ typedef struct
 
 typedef struct
 {
-    int id;
+    local_id id;
     process_task task;
     int connection_count;
     connection_t *connections;
