@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "ipc.h"
 #include "common.h"
 #include "pa1.h"
@@ -33,10 +34,12 @@ typedef struct
 
 int send_greeting()
 {
+    return 0;
 }
 
 int send_parting()
 {
+    return 0;
 }
 
 void do_smth()
@@ -45,8 +48,31 @@ void do_smth()
     send_parting();
 }
 
-void establish_connection()
+void disable_blocks(int fd){
+    int flags = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+int create_pipe_without_blocks(int* fd){
+    if (pipe(fd) != 0)
+        return -1;
+    disable_blocks(*fd);
+    disable_blocks(fd[1]);
+    return 0;
+}
+
+void unidirectional_connection(proc_info* send, proc_info* receive){
+    int fd[2];
+    create_pipe_without_blocks(fd);
+    receive->connections[send->id].read = fd[0];
+    send->connections[receive->id].write = fd[1];
+}
+
+
+void establish_connection(proc_info* send, proc_info* receive)
 {
+    unidirectional_connection(send, receive);
+    unidirectional_connection(receive,send);
 }
 
 void establish_all_connections(System *sys)
@@ -56,12 +82,12 @@ void establish_all_connections(System *sys)
     {
         for (j = 0; j < sys->process_count; j++)
         {
-            establish_connection();
+            establish_connection((sys->processes + i), (sys->processes + j));
         }
     }
 }
 
-int create_process(process_task task)
+int create_process(proc_info* proc)
 {
     pid_t id = fork();
     if (id < 0)
@@ -72,18 +98,19 @@ int create_process(process_task task)
     }
     if (id == 0)
     {
-        task();
+        (*proc).task();
         _exit(0);
     }
     return id;
 }
 
-void initialize_child(proc_info *child)
+void initialize_child(proc_info *child, process_task task)
 {
+    child->task = task;
     child->connections = malloc(sizeof(connection) * (PROCESS_COUNT - 1));
 }
 
-System *initialize_System()
+System *initialize_System(process_task task)
 {
     System *sys = (System *)malloc(sizeof(System));
     sys->process_count = PROCESS_COUNT;
@@ -91,16 +118,17 @@ System *initialize_System()
     sys->processes = children;
     int i;
     for (i = 0; i < sys->process_count; i++)
-        initialize_child(sys->processes + i);
+        initialize_child(sys->processes + i, task);
+    return sys;
 }
 
-void run(process_task task)
+void run(System* sys)
 {
     int i;
     int pid_arr[PROCESS_COUNT];
     for (i = 0; i < PROCESS_COUNT; i++)
     {
-        pid_arr[i] = create_process(task);
+        pid_arr[i] = create_process(sys->processes + i);
     }
 }
 
@@ -114,8 +142,8 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    System *sys = initialize_System();
+    System *sys = initialize_System(do_smth);
     establish_all_connections(sys);
-    run(do_smth);
+    run(sys);
     return 0;
 }
