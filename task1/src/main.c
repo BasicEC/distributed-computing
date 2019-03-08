@@ -15,24 +15,24 @@ int PROCESS_COUNT;
 FILE *fevents_log;
 FILE *fpipes_log;
 
-int send_to_all_and_wait_all(proc_info_t *proc, char* text)
+int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 {
     Message *msg = (Message *)malloc(sizeof(Message));
-    MessageHeader header = (MessageHeader *)malloc(sizeof(MessageHeader));
+    MessageHeader *header = (MessageHeader *)malloc(sizeof(MessageHeader));
     header->s_magic = MESSAGE_MAGIC;
-    header->s_payload_len = 3;
-    header->s_type = STARTED;
+    header->s_payload_len = strlen(text);
+    header->s_type = type;
     // header->s_local_time wtf, what is that???
-    msg->s_header = header;
+    msg->s_header = *header;
     strcpy(msg->s_payload, text);
 
     send_multicast(proc, msg);
 
-    Message msg[proc->connection_count];
+    Message* msgs[proc->connection_count];
     for (int i = 0; i < proc->connection_count; i++)
     {
-        msg[i] = (Message *)malloc(sizeof(Message));
-        receive_any(proc, &msg[i]);
+        msgs[i] = (Message *)malloc(sizeof(Message));
+        receive_any(proc, msgs[i]);
     }
 
     fprintf(fevents_log, log_received_all_started_fmt, proc->id);
@@ -45,14 +45,17 @@ void do_smth()
 
 static int pipes_log_descriptor = -1;
 
-int get_pipes_log_descriptor() {
-    if (pipes_log_descriptor < 0) {
+int get_pipes_log_descriptor()
+{
+    if (pipes_log_descriptor < 0)
+    {
         pipes_log_descriptor = open(pipes_log, O_CREAT | O_APPEND | O_WRONLY | O_TRUNC, 0777);
     }
     return pipes_log_descriptor;
 }
 
-void log_pipe_event(char *fmt, local_id node_id, int fd) {
+void log_pipe_event(char *fmt, local_id node_id, int fd)
+{
     char formated_message[64];
     int len = sprintf(formated_message, fmt, node_id, fd);
 
@@ -60,16 +63,18 @@ void log_pipe_event(char *fmt, local_id node_id, int fd) {
     write(get_pipes_log_descriptor(), formated_message, len);
 }
 
-void log_pipe_read(local_id node_id, int fd) {
+void log_pipe_read(local_id node_id, int fd)
+{
     log_pipe_event("Node %d read from %d file descriptor\n", node_id, fd);
 }
 
-void log_pipe_write(local_id node_id, int fd) {
+void log_pipe_write(local_id node_id, int fd)
+{
     log_pipe_event("Node %d write to %d file descriptor\n", node_id, fd);
 }
 
-
-void disable_blocks(int fd){
+void disable_blocks(int fd)
+{
     int flags = fcntl(fd, F_GETFL);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
@@ -101,12 +106,12 @@ void establish_all_connections(System_t *sys)
         for (j = 0; j < sys->process_count; j++)
         {
 
-            if (i != j) {
+            if (i != j)
+            {
                 unidirectional_connection((sys->processes + i), (sys->processes + j));
             }
         }
     }
-
 }
 
 int create_process(proc_info_t *proc)
@@ -120,9 +125,9 @@ int create_process(proc_info_t *proc)
     }
     if (id == 0)
     {
-        send_greeting(proc);
+        send_to_all_and_wait_all(proc, "hello", STARTED);
         (*proc).task();
-        send_parting(proc);
+        send_to_all_and_wait_all(proc, "done", DONE);
         _exit(0);
     }
     return id;
@@ -142,7 +147,8 @@ System_t *initialize_System(process_task task)
     proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t) * sys->process_count);
     sys->processes = children;
     local_id i;
-    for (i = 0; i < sys->process_count; i++) {
+    for (i = 0; i < sys->process_count; i++)
+    {
         sys->processes[i].id = i;
         initialize_child(&sys->processes[i], task);
     }
@@ -174,7 +180,7 @@ int main(int argc, char **argv)
 {
     parse_arguments(argv);
     fevents_log = fopen(events_log, "w+");
-	fpipes_log = fopen(pipes_log, "w+");
+    fpipes_log = fopen(pipes_log, "w+");
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);

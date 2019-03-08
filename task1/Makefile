@@ -2,7 +2,7 @@ CC=clang
 IDIR=./include
 BDIR=./build
 TARGET=main
-CFLAGS=-std-c99 -Wall -pedantic -I $(IDIR)
+CFLAGS=-std=c99 -Wall -pedantic -I $(IDIR)
 SRC=$(wildcard src/*.c)
 OBJ=$(SRC:src/%.c=build/%.o)
 
