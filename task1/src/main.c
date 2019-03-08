@@ -15,20 +15,27 @@ int PROCESS_COUNT;
 FILE *fevents_log;
 FILE *fpipes_log;
 
-int send_greeting(proc_info_t* proc)
+int send_to_all_and_wait_all(proc_info_t *proc, char* text)
 {
-//    send_multicast(proc,"kek");
-//    int i;
-//    for (i = 0; i < proc->connection_count; i++)
-//        receive(proc,i,);
-    return 0;
-}
+    Message *msg = (Message *)malloc(sizeof(Message));
+    MessageHeader header = (MessageHeader *)malloc(sizeof(MessageHeader));
+    header->s_magic = MESSAGE_MAGIC;
+    header->s_payload_len = 3;
+    header->s_type = STARTED;
+    // header->s_local_time wtf, what is that???
+    msg->s_header = header;
+    strcpy(msg->s_payload, text);
 
-int send_parting(proc_info_t* proc)
-{
-//    send_multicast(proc,"lol");
-//    for (i = 0; i < proc->connection_count; i++)
-//        receive(proc,i,);
+    send_multicast(proc, msg);
+
+    Message msg[proc->connection_count];
+    for (int i = 0; i < proc->connection_count; i++)
+    {
+        msg[i] = (Message *)malloc(sizeof(Message));
+        receive_any(proc, &msg[i]);
+    }
+
+    fprintf(fevents_log, log_received_all_started_fmt, proc->id);
     return 0;
 }
 
@@ -36,12 +43,14 @@ void do_smth()
 {
 }
 
-void disable_blocks(int fd){
+void disable_blocks(int fd)
+{
     int flags = fcntl(fd, F_GETFL);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-int create_pipe_without_blocks(int* fd){
+int create_pipe_without_blocks(int *fd)
+{
     if (pipe(fd) != 0)
         return -1;
     disable_blocks(*fd);
@@ -49,18 +58,18 @@ int create_pipe_without_blocks(int* fd){
     return 0;
 }
 
-void unidirectional_connection(proc_info_t* send, proc_info_t* receive){
+void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
+{
     int fd[2];
     create_pipe_without_blocks(fd);
     receive->connections[send->id].read = fd[0];
     send->connections[receive->id].write = fd[1];
 }
 
-
-void establish_connection(proc_info_t* send, proc_info_t* receive)
+void establish_connection(proc_info_t *send, proc_info_t *receive)
 {
     unidirectional_connection(send, receive);
-    unidirectional_connection(receive,send);
+    unidirectional_connection(receive, send);
 }
 
 void establish_all_connections(System_t *sys)
@@ -75,7 +84,7 @@ void establish_all_connections(System_t *sys)
     }
 }
 
-int create_process(proc_info_t* proc)
+int create_process(proc_info_t *proc)
 {
     pid_t id = fork();
     if (id < 0)
@@ -112,7 +121,7 @@ System_t *initialize_System(process_task task)
     return sys;
 }
 
-void run(System_t* sys)
+void run(System_t *sys)
 {
     int i;
     int pid_arr[PROCESS_COUNT];
@@ -137,7 +146,7 @@ int main(int argc, char **argv)
 {
     parse_arguments(argv);
     fevents_log = fopen(evengs_log, "w+");
-	fpipes_log = fopen(pipes_log, "w+");
+    fpipes_log = fopen(pipes_log, "w+");
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);

@@ -98,9 +98,11 @@ static int read_msg(int fd, Message *msg)
 
     msg->s_header = mh;
 
-    result1 = read(fd, msg->s_payload, mh.s_payload_len);
+    char buf[mh.s_payload_len];
+    result1 = read(fd, buf, mh.s_payload_len);
     if (result1 < 0)
         return result1;
+    strcpy(msg->s_payload, buf);
 
     return result0 + result1;
 }
