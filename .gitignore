@@ -1,1 +1,4 @@
 task1/build/
+task1/.idea/
+task1/CMakeLists.txt
+task1/cmake-build-debug
