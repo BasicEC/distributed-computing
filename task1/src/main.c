@@ -43,9 +43,9 @@ void do_smth()
 {
 }
 
+static int pipes_log_descriptor = -1;
 
 int get_pipes_log_descriptor() {
-    static int pipes_log_descriptor = -1;
     if (pipes_log_descriptor < 0) {
         pipes_log_descriptor = open(pipes_log, O_CREAT | O_APPEND | O_WRONLY | O_TRUNC, 0777);
     }
@@ -93,12 +93,6 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
     log_pipe_write(send->id, fd[1]);
 }
 
-void establish_connection(proc_info_t *send, proc_info_t *receive)
-{
-    unidirectional_connection(send, receive);
-    unidirectional_connection(receive, send);
-}
-
 void establish_all_connections(System_t *sys)
 {
     int i, j;
@@ -106,9 +100,13 @@ void establish_all_connections(System_t *sys)
     {
         for (j = 0; j < sys->process_count; j++)
         {
-            establish_connection((sys->processes + i), (sys->processes + j));
+
+            if (i != j) {
+                unidirectional_connection((sys->processes + i), (sys->processes + j));
+            }
         }
     }
+
 }
 
 int create_process(proc_info_t *proc)
@@ -134,6 +132,7 @@ void initialize_child(proc_info_t *child, process_task task)
 {
     child->task = task;
     child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT - 1));
+    child->connection_count = PROCESS_COUNT - 1;
 }
 
 System_t *initialize_System(process_task task)
@@ -142,9 +141,11 @@ System_t *initialize_System(process_task task)
     sys->process_count = PROCESS_COUNT;
     proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t) * sys->process_count);
     sys->processes = children;
-    int i;
-    for (i = 0; i < sys->process_count; i++)
-        initialize_child(sys->processes + i, task);
+    local_id i;
+    for (i = 0; i < sys->process_count; i++) {
+        sys->processes[i].id = i;
+        initialize_child(&sys->processes[i], task);
+    }
     return sys;
 }
 
