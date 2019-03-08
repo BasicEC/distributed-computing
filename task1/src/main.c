@@ -7,30 +7,9 @@
 #include "ipc.h"
 #include "common.h"
 #include "pa1.h"
+#include "self.h"
 
 int PROCESS_COUNT;
-
-typedef void (*process_task)();
-
-typedef struct
-{
-    int read;
-    int write;
-} connection;
-
-typedef struct
-{
-    int id;
-    process_task task;
-    int connection_count;
-    connection *connections;
-} proc_info;
-
-typedef struct
-{
-    int process_count;
-    proc_info *processes;
-} System;
 
 int send_greeting()
 {
@@ -61,7 +40,7 @@ int create_pipe_without_blocks(int* fd){
     return 0;
 }
 
-void unidirectional_connection(proc_info* send, proc_info* receive){
+void unidirectional_connection(proc_info_t* send, proc_info_t* receive){
     int fd[2];
     create_pipe_without_blocks(fd);
     receive->connections[send->id].read = fd[0];
@@ -69,13 +48,13 @@ void unidirectional_connection(proc_info* send, proc_info* receive){
 }
 
 
-void establish_connection(proc_info* send, proc_info* receive)
+void establish_connection(proc_info_t* send, proc_info_t* receive)
 {
     unidirectional_connection(send, receive);
     unidirectional_connection(receive,send);
 }
 
-void establish_all_connections(System *sys)
+void establish_all_connections(System_t *sys)
 {
     int i, j;
     for (i = 0; i < sys->process_count; i++)
@@ -87,7 +66,7 @@ void establish_all_connections(System *sys)
     }
 }
 
-int create_process(proc_info* proc)
+int create_process(proc_info_t* proc)
 {
     pid_t id = fork();
     if (id < 0)
@@ -104,17 +83,17 @@ int create_process(proc_info* proc)
     return id;
 }
 
-void initialize_child(proc_info *child, process_task task)
+void initialize_child(proc_info_t *child, process_task task)
 {
     child->task = task;
-    child->connections = malloc(sizeof(connection) * (PROCESS_COUNT - 1));
+    child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT - 1));
 }
 
-System *initialize_System(process_task task)
+System_t *initialize_System(process_task task)
 {
-    System *sys = (System *)malloc(sizeof(System));
+    System_t *sys = (System_t *)malloc(sizeof(System_t));
     sys->process_count = PROCESS_COUNT;
-    proc_info *children = (proc_info *)malloc(sizeof(proc_info));
+    proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t));
     sys->processes = children;
     int i;
     for (i = 0; i < sys->process_count; i++)
@@ -122,7 +101,7 @@ System *initialize_System(process_task task)
     return sys;
 }
 
-void run(System* sys)
+void run(System_t* sys)
 {
     int i;
     int pid_arr[PROCESS_COUNT];
@@ -142,7 +121,7 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    System *sys = initialize_System(do_smth);
+    System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);
     return 0;

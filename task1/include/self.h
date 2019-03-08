@@ -3,21 +3,30 @@
 
 #include "ipc.h"
 
-typedef struct {
-    intlocal_id current_pid;
-    int p_count;
-    int* pipefds;
-} self_t;
+typedef void (*process_task)();
 
-//return pipefd or -1 if err 
-int get_w_pipefd_by_id(self_t* self, local_id dst);
+typedef struct
+{
+    int read;
+    int write;
+} connection_t;
 
-int get_r_pipefd_by_id(self_t* self, local_id dst);
+typedef struct
+{
+    int id;
+    process_task task;
+    int connection_count;
+    connection_t *connections;
+} proc_info_t;
 
-//return count of pipefds or -1 if err.
-//pipefds must point to arr with pipefds in the end of method
-int *get_all_w_pipefds(self_t* self);
+typedef struct
+{
+    int process_count;
+    proc_info_t *processes;
+} System_t;
 
-int *get_all_r_pipefds(self_t *self);
+int get_w_pipefd_by_id(proc_info_t *self, local_id dst);
+
+int get_r_pipefd_by_id(proc_info_t *self, local_id dst);
 
 #endif //__IFMO_DISTRIBUTED_CLASS_SELF__H
