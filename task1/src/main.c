@@ -12,6 +12,9 @@
 
 int PROCESS_COUNT;
 
+FILE *fevents_log;
+FILE *fpipes_log;
+
 int send_greeting(proc_info_t* proc)
 {
 //    send_multicast(proc,"kek");
@@ -161,6 +164,8 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
+    fevents_log = fopen(evengs_log, "w+");
+	fpipes_log = fopen(pipes_log, "w+");
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);

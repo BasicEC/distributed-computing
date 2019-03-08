@@ -6,8 +6,9 @@
 
 int send(void *self, local_id dst, const Message *msg)
 {
+    proc_info_t *selft = (proc_info_t *)self;
     ssize_t w_result;
-    int pipefd = get_w_pipefd_by_id((proc_info_t *)self, dst);
+    int pipefd = get_w_pipefd_by_id((proc_info_t *)selft, dst);
 
     if (pipefd < 0)
         return pipefd;
