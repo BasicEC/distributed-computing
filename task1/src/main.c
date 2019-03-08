@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <wait.h>
 #include "ipc.h"
 #include "common.h"
 #include "pa1.h"
@@ -14,20 +15,25 @@ int PROCESS_COUNT;
 FILE *fevents_log;
 FILE *fpipes_log;
 
-int send_greeting()
+int send_greeting(proc_info_t* proc)
 {
+//    send_multicast(proc,"kek");
+//    int i;
+//    for (i = 0; i < proc->connection_count; i++)
+//        receive(proc,i,);
     return 0;
 }
 
-int send_parting()
+int send_parting(proc_info_t* proc)
 {
+//    send_multicast(proc,"lol");
+//    for (i = 0; i < proc->connection_count; i++)
+//        receive(proc,i,);
     return 0;
 }
 
 void do_smth()
 {
-    send_greeting();
-    send_parting();
 }
 
 void disable_blocks(int fd){
@@ -80,7 +86,9 @@ int create_process(proc_info_t* proc)
     }
     if (id == 0)
     {
+        send_greeting(proc);
         (*proc).task();
+        send_parting(proc);
         _exit(0);
     }
     return id;
@@ -96,7 +104,7 @@ System_t *initialize_System(process_task task)
 {
     System_t *sys = (System_t *)malloc(sizeof(System_t));
     sys->process_count = PROCESS_COUNT;
-    proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t));
+    proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t) * sys->process_count);
     sys->processes = children;
     int i;
     for (i = 0; i < sys->process_count; i++)
@@ -111,6 +119,10 @@ void run(System_t* sys)
     for (i = 0; i < PROCESS_COUNT; i++)
     {
         pid_arr[i] = create_process(sys->processes + i);
+    }
+    for (i = 0; i < PROCESS_COUNT; i++)
+    {
+        wait(NULL);
     }
 }
 
