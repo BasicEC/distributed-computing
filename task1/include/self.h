@@ -16,8 +16,8 @@ int get_r_pipefd_by_id(self_t* self, local_id dst);
 
 //return count of pipefds or -1 if err.
 //pipefds must point to arr with pipefds in the end of method
-int get_all_w_pipefds(self_t* self, int* pipefds);
+int *get_all_w_pipefds(self_t* self);
 
-int get_all_r_pipefds(self_t* self, int* pipefds);
+int *get_all_r_pipefds(self_t *self);
 
 #endif //__IFMO_DISTRIBUTED_CLASS_SELF__H
