@@ -4,7 +4,8 @@
 #include "ipc.h"
 
 typedef struct {
-    intlocal_id current_pid,
+    intlocal_id current_pid;
+    int p_count;
     int* pipefds;
 } self_t;
 
