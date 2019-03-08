@@ -6,30 +6,9 @@
 #include "ipc.h"
 #include "common.h"
 #include "pa1.h"
+#include "self.h"
 
 int PROCESS_COUNT;
-
-typedef void (*process_task)();
-
-typedef struct
-{
-    int read;
-    int write;
-} connection;
-
-typedef struct
-{
-    int id;
-    process_task task;
-    int connection_count;
-    connection *connections;
-} proc_info;
-
-typedef struct
-{
-    int process_count;
-    proc_info *processes;
-} System;
 
 int send_greeting()
 {
@@ -49,7 +28,7 @@ void establish_connection()
 {
 }
 
-void establish_all_connections(System *sys)
+void establish_all_connections(System_t *sys)
 {
     int i, j;
     for (i = 0; i < sys->process_count; i++)
@@ -78,16 +57,16 @@ int create_process(process_task task)
     return id;
 }
 
-void initialize_child(proc_info *child)
+void initialize_child(proc_info_t *child)
 {
-    child->connections = malloc(sizeof(connection) * (PROCESS_COUNT - 1));
+    child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT - 1));
 }
 
-System *initialize_System()
+System_t *initialize_System()
 {
-    System *sys = (System *)malloc(sizeof(System));
+    System_t *sys = (System_t *)malloc(sizeof(System_t));
     sys->process_count = PROCESS_COUNT;
-    proc_info *children = (proc_info *)malloc(sizeof(proc_info));
+    proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t));
     sys->processes = children;
     int i;
     for (i = 0; i < sys->process_count; i++)
@@ -114,7 +93,7 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    System *sys = initialize_System();
+    System_t *sys = initialize_System();
     establish_all_connections(sys);
     run(do_smth);
     return 0;
