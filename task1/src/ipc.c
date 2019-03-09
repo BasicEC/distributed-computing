@@ -3,16 +3,45 @@
 #include <unistd.h>
 #include "string.h"
 #include <stddef.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <common.h>
+
+
+
+int get_events_log_descriptor()
+{
+    return event_log_descriptor;
+}
+
+void log_events_event(char *fmt, local_id node_id, int fd)
+{
+    char formated_message[64];
+    int len = sprintf(formated_message, fmt, node_id, fd);
+
+    puts(formated_message);
+    write(get_events_log_descriptor(), formated_message, len);
+}
+
+void log_events_read(local_id node_id, int fd)
+{
+    log_events_event("Node %d read from %d file descriptor\n", node_id, fd);
+}
+
+void log_events_write(local_id node_id, int fd)
+{
+    log_events_event("Node %d write to %d file descriptor\n", node_id, fd);
+}
+
 
 static int send_msg(int fd, const Message *msg)
 {
     if (fd == 0 || msg == NULL)
         return -1;
 
-    int result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
-
+    ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
     if (result < 0)
-        return result;
+        return (int)result;
 
     return 0;
 }
@@ -28,17 +57,17 @@ static int read_msg(int fd, Message *msg)
 
     result0 = read(fd, &mh, sizeof(MessageHeader));
     if (result0 < 0)
-        return result0;
+        return (int)result0;
 
     msg->s_header = mh;
 
     char buf[mh.s_payload_len];
     result1 = read(fd, buf, mh.s_payload_len);
     if (result1 < 0)
-        return result1;
+        return (int)result1;
     strcpy(msg->s_payload, buf);
 
-    return result0 + result1;
+    return (int)(result0 + result1);
 }
 
 int send(void *self, local_id dst, const Message *msg)
@@ -65,7 +94,10 @@ int send_multicast(void *self, const Message *msg)
 
     for (int i = 0; i < selft->connection_count; ++i)
     {
+        if (i == selft->id)
+            continue;
         w_result = send_msg(selft->connections[i].write, msg);
+        log_events_write(selft->id,selft->connections[i].write);
         if (w_result < 0)
             return w_result;
     }
@@ -102,7 +134,8 @@ int receive_any(void *self, Message *msg)
             if (r_result != 0)
             {
                 if (r_result < 0)
-                    return r_result;
+                    return (int)r_result;
+                log_events_read(selft->id, selft->connections[i].read);
                 return 0;
             }
         }

@@ -12,15 +12,13 @@
 
 int PROCESS_COUNT;
 
-FILE *fevents_log;
-FILE *fpipes_log;
 
 int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 {
     Message *msg = (Message *)malloc(sizeof(Message));
     MessageHeader *header = (MessageHeader *)malloc(sizeof(MessageHeader));
     header->s_magic = MESSAGE_MAGIC;
-    header->s_payload_len = strlen(text);
+    header->s_payload_len = (uint16_t)strlen(text);
     header->s_type = type;
     // header->s_local_time wtf, what is that???
     msg->s_header = *header;
@@ -35,7 +33,7 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
         receive_any(proc, msgs[i]);
     }
 
-    fprintf(fevents_log, log_received_all_started_fmt, proc->id);
+//    fprintf(fevents_log, log_received_all_started_fmt, proc->id);
     return 0;
 }
 
@@ -60,7 +58,7 @@ void log_pipe_event(char *fmt, local_id node_id, int fd)
     int len = sprintf(formated_message, fmt, node_id, fd);
 
     puts(formated_message);
-    write(get_pipes_log_descriptor(), formated_message, len);
+    write(get_pipes_log_descriptor(), formated_message, (size_t)len);
 }
 
 void log_pipe_read(local_id node_id, int fd)
@@ -179,8 +177,7 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    fevents_log = fopen(events_log, "w+");
-    fpipes_log = fopen(pipes_log, "w+");
+    event_log_descriptor = open(events_log, O_CREAT | O_APPEND | O_WRONLY | O_TRUNC, 0777);
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);
