@@ -112,7 +112,31 @@ void establish_all_connections(System_t *sys)
     }
 }
 
-int create_process(proc_info_t *proc)
+
+void close_connection(connection_t* connection){
+    close(connection->read);
+    close(connection->write);
+}
+
+void close_all_unused_connections(System_t* sys, int index){
+    int i;
+    for (i = 0; i < sys->process_count; i++){
+        if (i == index) continue;
+        int j;
+        proc_info_t* info_i = sys->processes + i;
+        for (j = 0; j < sys->process_count; j++){
+            proc_info_t* info_j = sys->processes + j;
+            if (i!=j && j != index) {
+                close_connection(info_i->connections + j);
+                close_connection(info_j->connections + i);
+            }
+            else if (j == index)
+                close_connection(info_i->connections + j);
+        }
+    }
+}
+
+int create_process(System_t *sys, int index)
 {
     pid_t id = fork();
     if (id < 0)
@@ -123,6 +147,8 @@ int create_process(proc_info_t *proc)
     }
     if (id == 0)
     {
+        proc_info_t* proc = sys->processes + index;
+        close_all_unused_connections(sys, index);
         send_to_all_and_wait_all(proc, "hello", STARTED);
         (*proc).task();
         send_to_all_and_wait_all(proc, "done", DONE);
@@ -159,7 +185,7 @@ void run(System_t *sys)
     int pid_arr[PROCESS_COUNT];
     for (i = 0; i < PROCESS_COUNT; i++)
     {
-        pid_arr[i] = create_process(sys->processes + i);
+        pid_arr[i] = create_process(sys, i);
     }
     for (i = 0; i < PROCESS_COUNT; i++)
     {
@@ -177,7 +203,6 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
-    event_log_descriptor = open(events_log, O_CREAT | O_APPEND | O_WRONLY | O_TRUNC, 0777);
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);

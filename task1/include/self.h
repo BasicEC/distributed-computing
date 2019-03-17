@@ -5,7 +5,6 @@
 
 typedef void (*process_task)();
 
-static int event_log_descriptor = -1;
 
 typedef struct
 {

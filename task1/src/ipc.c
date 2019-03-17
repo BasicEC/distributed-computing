@@ -8,9 +8,12 @@
 #include <common.h>
 
 
+int event_log_descriptor = -1;
 
 int get_events_log_descriptor()
 {
+    if(event_log_descriptor == -1)
+        event_log_descriptor = open(events_log, O_CREAT | O_APPEND | O_WRONLY, 0777);
     return event_log_descriptor;
 }
 
