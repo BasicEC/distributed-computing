@@ -43,10 +43,8 @@ static int send_msg(int fd, const Message *msg)
         return -1;
 
     ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
-    if (result < 0)
-        return (int)result;
 
-    return 0;
+    return (int)result;
 }
 
 static int read_msg(int fd, Message *msg)

@@ -138,30 +138,32 @@ void close_all_unused_connections(System_t* sys, int index){
 
 int create_process(System_t *sys, int index)
 {
-    pid_t id = fork();
-    if (id < 0)
-    {
-        perror("unable to create process");
-        errno = -1;
-        _exit(-1);
-    }
-    if (id == 0)
-    {
+//    pid_t id = fork();
+//    if (id < 0)
+//    {
+//        perror("unable to create process");
+//        errno = -1;
+//        _exit(errno);
+//    }
+//    if (id == 0)
+//    {
+//        usleep((9-index)*10000);
         proc_info_t* proc = sys->processes + index;
-        close_all_unused_connections(sys, index);
+//        close_all_unused_connections(sys, index);
         send_to_all_and_wait_all(proc, "hello", STARTED);
         (*proc).task();
         send_to_all_and_wait_all(proc, "done", DONE);
         _exit(0);
-    }
-    return id;
+//    }
+//    return id;
+return 0;
 }
 
 void initialize_child(proc_info_t *child, process_task task)
 {
     child->task = task;
-    child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT - 1));
-    child->connection_count = PROCESS_COUNT - 1;
+    child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT));
+    child->connection_count = PROCESS_COUNT;
 }
 
 System_t *initialize_System(process_task task)
