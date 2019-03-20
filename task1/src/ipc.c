@@ -7,12 +7,11 @@
 #include <fcntl.h>
 #include <common.h>
 
-
 int event_log_descriptor = -1;
 
 int get_events_log_descriptor()
 {
-    if(event_log_descriptor == -1)
+    if (event_log_descriptor == -1)
         event_log_descriptor = open(events_log, O_CREAT | O_APPEND | O_WRONLY, 0777);
     return event_log_descriptor;
 }
@@ -36,7 +35,6 @@ void log_events_write(local_id node_id, int fd)
     log_events_event("Node %d write to %d file descriptor\n", node_id, fd);
 }
 
-
 static int send_msg(int fd, const Message *msg)
 {
     if (fd == 0 || msg == NULL)
@@ -45,6 +43,20 @@ static int send_msg(int fd, const Message *msg)
     ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
 
     return (int)result;
+}
+
+static int can_read(int fd)
+{
+    long cur = lseek(fd, 0, SEEK_CUR);
+    long end = lseek(fd, 0, SEEK_END);
+
+    if (end > cur)
+    {
+        lseek(fd, cur, SEEK_SET);
+        return 1;
+    }
+
+    return 0;
 }
 
 static int read_msg(int fd, Message *msg)
@@ -98,7 +110,7 @@ int send_multicast(void *self, const Message *msg)
         if (i == selft->id)
             continue;
         w_result = send_msg(selft->connections[i].write, msg);
-        log_events_write(selft->id,selft->connections[i].write);
+        log_events_write(selft->id, selft->connections[i].write);
         if (w_result < 0)
             return w_result;
     }
@@ -131,9 +143,9 @@ int receive_any(void *self, Message *msg)
     {
         for (int i = 0; i < selft->connection_count; ++i)
         {
-            r_result = read_msg(selft->connections[i].read, msg);
-            if (r_result != 0)
+            if (can_read(selft->connections[i].read))
             {
+                r_result = read_msg(selft->connections[i].read, msg);
                 if (r_result < 0)
                     return (int)r_result;
                 log_events_read(selft->id, selft->connections[i].read);
