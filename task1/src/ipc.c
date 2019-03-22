@@ -45,7 +45,7 @@ static int send_msg(int fd, const Message *msg)
     return (int)result;
 }
 
-static int can_read(int fd)
+static int  can_read(int fd)
 {
     long cur = lseek(fd, 0, SEEK_CUR);
     long end = lseek(fd, 0, SEEK_END);
@@ -147,10 +147,12 @@ int receive_any(void *self, Message *msg)
                 continue;
             if (can_read(selft->connections[i].read))
             {
-                log_events_read(selft->id, selft->connections[i].read, i);
                 r_result = read_msg(selft->connections[i].read, msg);
                 if (r_result < 0)
                     return (int)r_result;
+                if (!r_result)
+                    continue;
+                log_events_read(selft->id, selft->connections[i].read, i);
                 return 0;
             }
         }
