@@ -27,7 +27,7 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
     send_multicast(proc, msg);
 
     Message* msgs[proc->connection_count];
-    for (int i = 0; i < proc->connection_count; i++)
+    for (int i = 0; i < proc->connection_count - 2; i++)
     {
         msgs[i] = (Message *)malloc(sizeof(Message));
         receive_any(proc, msgs[i]);
@@ -138,25 +138,24 @@ void close_all_unused_connections(System_t* sys, int index){
 
 int create_process(System_t *sys, int index)
 {
-//    pid_t id = fork();
-//    if (id < 0)
-//    {
-//        perror("unable to create process");
-//        errno = -1;
-//        _exit(errno);
-//    }
-//    if (id == 0)
-//    {
+    pid_t id = fork();
+    if (id < 0)
+    {
+        perror("unable to create process");
+        errno = -1;
+        _exit(errno);
+    }
+    if (id == 0)
+    {
 //        usleep((9-index)*10000);
         proc_info_t* proc = sys->processes + index;
-//        close_all_unused_connections(sys, index);
+        close_all_unused_connections(sys, index);
         send_to_all_and_wait_all(proc, "hello", STARTED);
         (*proc).task();
         send_to_all_and_wait_all(proc, "done", DONE);
         _exit(0);
-//    }
-//    return id;
-return 0;
+    }
+    return id;
 }
 
 void initialize_child(proc_info_t *child, process_task task)
@@ -185,13 +184,22 @@ void run(System_t *sys)
 {
     int i;
     int pid_arr[PROCESS_COUNT];
-    for (i = 0; i < PROCESS_COUNT; i++)
+    for (i = 1; i < PROCESS_COUNT; i++)
     {
         pid_arr[i] = create_process(sys, i);
     }
-    for (i = 0; i < PROCESS_COUNT; i++)
+    Message msg_start[PROCESS_COUNT - 1];
+    for (i = 1; i < PROCESS_COUNT; i++)
     {
-        wait(NULL);
+        proc_info_t* info = sys->processes;
+        receive_any(info,(msg_start+i-1));
+    }
+
+    Message msg_end[PROCESS_COUNT - 1];
+    for (i = 1; i < PROCESS_COUNT; i++)
+    {
+        proc_info_t* info = sys->processes;
+        receive_any(info,(msg_end+i-1));
     }
 }
 
@@ -199,7 +207,7 @@ void parse_arguments(char **args)
 {
     void *ptr = NULL;
     if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0)
-        PROCESS_COUNT = (short)strtol(args[2], ptr, 10);
+        PROCESS_COUNT = (short)strtol(args[2], ptr, 10) + 1;
 }
 
 int main(int argc, char **argv)
