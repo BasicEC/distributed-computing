@@ -27,12 +27,12 @@ void log_events_event(char *fmt, local_id node_id, int fd)
 
 void log_events_read(local_id node_id, int fd)
 {
-    log_events_event("Node %d read from %d file descriptor\n", node_id, fd);
+    log_events_event("Node %d receive message from %d file descriptor\n", node_id, fd);
 }
 
 void log_events_write(local_id node_id, int fd)
 {
-    log_events_event("Node %d write to %d file descriptor\n", node_id, fd);
+    log_events_event("Node %d send message to %d file descriptor\n", node_id, fd);
 }
 
 static int send_msg(int fd, const Message *msg)

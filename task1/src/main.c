@@ -190,6 +190,7 @@ void run(System_t *sys)
     {
         pid_arr[i] = create_process(sys, i);
     }
+    close_all_unused_connections(sys,0);
     Message msg_start[PROCESS_COUNT - 1];
     for (i = 0; i < PROCESS_COUNT - 1; i++)
     {
