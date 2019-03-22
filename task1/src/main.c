@@ -11,6 +11,7 @@
 #include "self.h"
 
 int PROCESS_COUNT;
+int CONNECTIONS_COUNT;
 
 
 int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
@@ -96,6 +97,7 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
     log_pipe_write(send->id, fd[1]);
 }
 
+
 void establish_all_connections(System_t *sys)
 {
     int i, j;
@@ -161,8 +163,8 @@ int create_process(System_t *sys, int index)
 void initialize_child(proc_info_t *child, process_task task)
 {
     child->task = task;
-    child->connections = malloc(sizeof(connection_t) * (PROCESS_COUNT));
-    child->connection_count = PROCESS_COUNT;
+    child->connections = malloc(sizeof(connection_t) * (CONNECTIONS_COUNT));
+    child->connection_count = CONNECTIONS_COUNT;
 }
 
 System_t *initialize_System(process_task task)
@@ -174,7 +176,7 @@ System_t *initialize_System(process_task task)
     local_id i;
     for (i = 0; i < sys->process_count; i++)
     {
-        sys->processes[i].id = i;
+        sys->processes[i].id = (local_id)(i);
         initialize_child(&sys->processes[i], task);
     }
     return sys;
@@ -189,25 +191,27 @@ void run(System_t *sys)
         pid_arr[i] = create_process(sys, i);
     }
     Message msg_start[PROCESS_COUNT - 1];
-    for (i = 1; i < PROCESS_COUNT; i++)
+    for (i = 0; i < PROCESS_COUNT - 1; i++)
     {
         proc_info_t* info = sys->processes;
-        receive_any(info,(msg_start+i-1));
+        receive_any(info,(msg_start+i));
     }
 
     Message msg_end[PROCESS_COUNT - 1];
-    for (i = 1; i < PROCESS_COUNT; i++)
+    for (i = 0; i < PROCESS_COUNT - 1; i++)
     {
         proc_info_t* info = sys->processes;
-        receive_any(info,(msg_end+i-1));
+        receive_any(info,(msg_end+i));
     }
 }
 
 void parse_arguments(char **args)
 {
     void *ptr = NULL;
-    if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0)
-        PROCESS_COUNT = (short)strtol(args[2], ptr, 10) + 1;
+    if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0) {
+        PROCESS_COUNT = (short) strtol(args[2], ptr, 10) + 1;
+        CONNECTIONS_COUNT = PROCESS_COUNT;
+    }
 }
 
 int main(int argc, char **argv)
