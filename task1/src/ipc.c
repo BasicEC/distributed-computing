@@ -16,23 +16,23 @@ int get_events_log_descriptor()
     return event_log_descriptor;
 }
 
-void log_events_event(char *fmt, local_id node_id, int fd)
+void log_events_event(char *fmt, local_id node_id, int fd,int client_id)
 {
     char formated_message[64];
-    int len = sprintf(formated_message, fmt, node_id, fd);
+    int len = sprintf(formated_message, fmt, node_id, fd, client_id);
 
     puts(formated_message);
     write(get_events_log_descriptor(), formated_message, len);
 }
 
-void log_events_read(local_id node_id, int fd)
+void log_events_read(local_id node_id, int fd, int client_id)
 {
-    log_events_event("Node %d receive message from %d file descriptor\n", node_id, fd);
+    log_events_event("Node %d receive message from %d file descriptor (node %d)\n", node_id, fd, client_id);
 }
 
-void log_events_write(local_id node_id, int fd)
+void log_events_write(local_id node_id, int fd, int client_id)
 {
-    log_events_event("Node %d send message to %d file descriptor\n", node_id, fd);
+    log_events_event("Node %d send message to %d file descriptor (node %d)\n", node_id, fd, client_id);
 }
 
 static int send_msg(int fd, const Message *msg)
@@ -110,7 +110,7 @@ int send_multicast(void *self, const Message *msg)
         if (i == selft->id)
             continue;
         w_result = send_msg(selft->connections[i].write, msg);
-        log_events_write(selft->id, selft->connections[i].write);
+        log_events_write(selft->id, selft->connections[i].write, i);
         if (w_result < 0)
             return w_result;
     }
@@ -147,7 +147,7 @@ int receive_any(void *self, Message *msg)
                 continue;
             if (can_read(selft->connections[i].read))
             {
-                log_events_read(selft->id, selft->connections[i].read);
+                log_events_read(selft->id, selft->connections[i].read, i);
                 r_result = read_msg(selft->connections[i].read, msg);
                 if (r_result < 0)
                     return (int)r_result;

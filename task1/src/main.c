@@ -53,23 +53,23 @@ int get_pipes_log_descriptor()
     return pipes_log_descriptor;
 }
 
-void log_pipe_event(char *fmt, local_id node_id, int fd)
+void log_pipe_event(char *fmt, local_id node_id, int fd, int client_id)
 {
     char formated_message[64];
-    int len = sprintf(formated_message, fmt, node_id, fd);
+    int len = sprintf(formated_message, fmt, node_id, fd, client_id);
 
     puts(formated_message);
     write(get_pipes_log_descriptor(), formated_message, (size_t)len);
 }
 
-void log_pipe_read(local_id node_id, int fd)
+void log_pipe_read(local_id node_id, int fd, local_id client_id)
 {
-    log_pipe_event("Node %d read from %d file descriptor\n", node_id, fd);
+    log_pipe_event("Node %d read from %d file descriptor (node %d)\n", node_id, fd, client_id);
 }
 
-void log_pipe_write(local_id node_id, int fd)
+void log_pipe_write(local_id node_id, int fd, local_id client_id)
 {
-    log_pipe_event("Node %d write to %d file descriptor\n", node_id, fd);
+    log_pipe_event("Node %d write to %d file descriptor (node %d)\n", node_id, fd, client_id);
 }
 
 void disable_blocks(int fd)
@@ -92,9 +92,9 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
     int fd[2];
     create_pipe_without_blocks(fd);
     receive->connections[send->id].read = fd[0];
-    log_pipe_read(receive->id, fd[0]);
+    log_pipe_read(receive->id, fd[0], send->id);
     send->connections[receive->id].write = fd[1];
-    log_pipe_write(send->id, fd[1]);
+    log_pipe_write(send->id, fd[1], receive->id);
 }
 
 
