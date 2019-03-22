@@ -101,7 +101,7 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
 void establish_all_connections(System_t *sys)
 {
     int i, j;
-    for (i = 0; i < sys->process_count; i++)
+    for (i = 1; i < sys->process_count; i++)
     {
         for (j = 0; j < sys->process_count; j++)
         {
