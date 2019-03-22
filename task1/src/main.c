@@ -28,7 +28,7 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
     send_multicast(proc, msg);
 
     Message* msgs[proc->connection_count];
-    for (int i = 0; i < proc->connection_count - 2; i++)
+    for (int i = 0; i < proc->connection_count - 1; i++)
     {
         msgs[i] = (Message *)malloc(sizeof(Message));
         receive_any(proc, msgs[i]);
@@ -192,7 +192,7 @@ void run(System_t *sys)
     }
     close_all_unused_connections(sys,0);
     Message msg_start[PROCESS_COUNT - 1];
-    for (i = 0; i < PROCESS_COUNT - 1; i++)
+    for (i = 1; i < PROCESS_COUNT - 1; i++)
     {
         proc_info_t* info = sys->processes;
         receive_any(info,(msg_start+i));

@@ -141,14 +141,16 @@ int receive_any(void *self, Message *msg)
 
     while (r_result == 0)
     {
-        for (int i = 0; i < selft->connection_count; ++i)
+        for (int i = 1; i < selft->connection_count; ++i)
         {
+            if (i == selft->id)
+                continue;
             if (can_read(selft->connections[i].read))
             {
+                log_events_read(selft->id, selft->connections[i].read);
                 r_result = read_msg(selft->connections[i].read, msg);
                 if (r_result < 0)
                     return (int)r_result;
-                log_events_read(selft->id, selft->connections[i].read);
                 return 0;
             }
         }
