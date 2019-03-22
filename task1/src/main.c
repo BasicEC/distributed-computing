@@ -21,20 +21,19 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
     header->s_magic = MESSAGE_MAGIC;
     header->s_payload_len = (uint16_t)strlen(text);
     header->s_type = type;
-    // header->s_local_time wtf, what is that???
+    // header->s_local_time
     msg->s_header = *header;
     strcpy(msg->s_payload, text);
 
     send_multicast(proc, msg);
 
     Message* msgs[proc->connection_count];
-    for (int i = 0; i < proc->connection_count - 1; i++)
+    for (int i = 1; i < proc->connection_count - 1; i++)
     {
         msgs[i] = (Message *)malloc(sizeof(Message));
         receive_any(proc, msgs[i]);
     }
 
-//    fprintf(fevents_log, log_received_all_started_fmt, proc->id);
     return 0;
 }
 
@@ -75,7 +74,7 @@ void log_pipe_write(local_id node_id, int fd, local_id client_id)
 void disable_blocks(int fd)
 {
     int flags = fcntl(fd, F_GETFL);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    fcntl(fd, F_SETFL, flags);
 }
 
 int create_pipe_without_blocks(int *fd)

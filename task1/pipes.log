@@ -1,8 +1,0 @@
-Node 0 read from 3 file descriptor (node 1)
-Node 1 write to 4 file descriptor (node 0)
-Node 2 read from 6 file descriptor (node 1)
-Node 1 write to 7 file descriptor (node 2)
-Node 0 read from 8 file descriptor (node 2)
-Node 2 write to 9 file descriptor (node 0)
-Node 1 read from 10 file descriptor (node 2)
-Node 2 write to 11 file descriptor (node 1)
