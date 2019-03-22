@@ -53,10 +53,10 @@ static int can_read(int fd)
     if (end > cur)
     {
         lseek(fd, cur, SEEK_SET);
-        return 1;
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
 
 static int read_msg(int fd, Message *msg)
