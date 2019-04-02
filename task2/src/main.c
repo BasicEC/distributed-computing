@@ -31,38 +31,16 @@ balance_t *parse_arguments(char **args)
         balances[i] = (balance_t)atoi(args[i + 3]);
 }
 
-
-void initialize_child(proc_info_t *child, process_task task)
-{
-    child->task = task;
-    child->connections = malloc(sizeof(connection_t) * (CONNECTIONS_COUNT));
-    child->connection_count = CONNECTIONS_COUNT;
-}
-
-System_t *initialize_System(process_task task)
-{
-    System_t *sys = (System_t *)malloc(sizeof(System_t));
-    sys->process_count = PROCESS_COUNT;
-    proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t) * sys->process_count);
-    sys->processes = children;
-    local_id i;
-    for (i = 0; i < sys->process_count; i++)
-    {
-        sys->processes[i].id = (local_id)(i);
-        initialize_child(&sys->processes[i], task);
-    }
-    return sys;
-}
-
 int main(int argc, char **argv)
 {
     balance_t* balances = parse_arguments(argv);
     open_log_files();
-    System_t *sys = initialize_System(do_smth);
+    System_t *sys = initialize_System(do_smth, PROCESS_COUNT);
 
     /*
         code here
         OKEY
+        why there is no code? :(
     */
 
     close_log_files();
