@@ -24,7 +24,7 @@ balance_t *parse_arguments(char **args)
     }
 
     balance_t *balances = (balance_t *)malloc(sizeof(balance_t) * (PROCESS_COUNT - 1));
-    
+
     for (int i = 0; i < PROCESS_COUNT - 1; i++)
     {
         balances[i] = (balance_t)atoi(args[i + 3]);
@@ -34,6 +34,11 @@ balance_t *parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     balance_t* balances = parse_arguments(argv);
-    
+    open_log_files();
+    /*
+        code here
+    */
+
+    close_log_files();
     return 0;
 }
