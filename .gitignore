@@ -1,4 +1,8 @@
-task1/build/
-task1/.idea/
-task1/CMakeLists.txt
-task1/cmake-build-debug
+task[12345]/build/
+task[12345]/.idea/
+task[12345]/CMakeLists.txt
+task[12345]/cmake-build-debug
+task[12345]/pa[12345]/
+task[12345]/*.log
+task[12345]/pa[12345].tar.gz
+task[12345]/main

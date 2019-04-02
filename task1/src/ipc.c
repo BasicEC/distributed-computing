@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <common.h>
+#include "common.h"
 
 int event_log_descriptor = -1;
 
