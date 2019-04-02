@@ -12,7 +12,6 @@
 #include "logs.h"
 
 int PROCESS_COUNT;
-int CONNECTIONS_COUNT;
 
 void do_smth(){}
 
@@ -22,7 +21,6 @@ balance_t *parse_arguments(char **args)
     if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0)
     {
         PROCESS_COUNT = (short)strtol(args[2], ptr, 10) + 1;
-        CONNECTIONS_COUNT = PROCESS_COUNT;
     }
 
     balance_t *balances = (balance_t *)malloc(sizeof(balance_t) * (PROCESS_COUNT - 1));
