@@ -2,8 +2,9 @@
 #define __IFMO_DISTRIBUTED_CLASS_SELF__H
 
 #include "ipc.h"
+#include "banking.h"
 
-typedef void (*process_task)(proc_info_t* proc_info);
+typedef void (*process_task)(System_t* proc_info, local_id id);
 
 
 typedef struct
@@ -15,6 +16,7 @@ typedef struct
 typedef struct
 {
     local_id id;
+    balance_t balance;
     process_task task;
     int connection_count;
     connection_t *connections;
@@ -26,9 +28,7 @@ typedef struct
     proc_info_t *processes;
 } System_t;
 
-void initialize_child(proc_info_t *child, process_task task);
-
-System_t *initialize_System(process_task task);
+System_t *initialize_System(process_task c_task, process_task p_task, int proc_count, balance_t *balances);
 
 int get_w_pipefd_by_id(proc_info_t *self, local_id dst);
 
