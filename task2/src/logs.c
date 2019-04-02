@@ -21,22 +21,22 @@ void log_event(event_log_type_t type, local_id l_id, local_id to_id, balance_t s
 
   switch (type)
   {
-  case STARTED:
+  case _STARTED:
     sprintf(buf, log_started_fmt, get_physical_time(), l_id, getpid(), getppid(), s_balance);
     break;
-  case DONE:
+  case _DONE:
     sprintf(buf, log_done_fmt, get_physical_time(), l_id, s_balance);
     break;
-  case TRANSFER_IN:
+  case _TRANSFER_IN:
     sprintf(buf, log_transfer_in_fmt, get_physical_time(), l_id, s_balance, to_id);
     break;
-  case TRANSFER_OUT:
+  case _TRANSFER_OUT:
     sprintf(buf, log_transfer_out_fmt, get_physical_time(), l_id, s_balance, to_id);
     break;
-  case RECEIVED_ALL_DONE:
+  case _RECEIVED_ALL_DONE:
     sprintf(buf, log_received_all_done_fmt, get_physical_time(), l_id);
     break;
-  case RECEIVED_ALL_STARTED:
+  case _RECEIVED_ALL_STARTED:
     sprintf(buf, log_received_all_started_fmt, get_physical_time(), l_id);
     break;
   default:

@@ -26,9 +26,9 @@ typedef struct
     proc_info_t *processes;
 } System_t;
 
-void initialize_child(proc_info_t *child, process_task task, int conn_count);
+void initialize_child(proc_info_t *child, process_task task);
 
-System_t *initialize_System(process_task task, int proc_count);
+System_t *initialize_System(process_task task);
 
 int get_w_pipefd_by_id(proc_info_t *self, local_id dst);
 

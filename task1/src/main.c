@@ -118,7 +118,7 @@ int send_multicast(void *self, const Message *msg)
         log_events_write(selft->id, selft->connections[i].write, i);
         if (w_result < 0)
             return w_result;
-    }
+
 
     return 0;
 }

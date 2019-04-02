@@ -21,12 +21,12 @@ static const char *const pipe_closed_msg =
 static const int MAX_LOG_LENGTH = 256;
 
 typedef enum {
-  STARTED = 0,
-  DONE = 1,
-  TRANSFER_IN = 2,
-  TRANSFER_OUT = 3,
-  RECEIVED_ALL_DONE = 4,
-  RECEIVED_ALL_STARTED = 5,
+  _STARTED = 0,
+  _DONE = 1,
+  _TRANSFER_IN = 2,
+  _TRANSFER_OUT = 3,
+  _RECEIVED_ALL_DONE = 4,
+  _RECEIVED_ALL_STARTED = 5,
 } event_log_type_t;
 
 typedef enum {
