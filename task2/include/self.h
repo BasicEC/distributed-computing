@@ -3,7 +3,7 @@
 
 #include "ipc.h"
 
-typedef void (*process_task)();
+typedef void (*process_task)(proc_info_t* proc_info);
 
 
 typedef struct

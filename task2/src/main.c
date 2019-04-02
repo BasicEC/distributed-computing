@@ -13,7 +13,34 @@
 
 int PROCESS_COUNT;
 
-void do_smth(){}
+int create_process(System_t *sys, int index)
+{
+    pid_t id = fork();
+    if (id < 0)
+    {
+        perror("unable to create process");
+        errno = -1;
+        _exit(errno);
+    }
+    if (id == 0)
+    {
+        proc_info_t *proc = sys->processes + index;
+        (*proc).task(proc);
+        _exit(0);
+    }
+    return id;
+}
+
+void fork_children(System_t *sys)
+{
+    int i;
+    int pid_arr[PROCESS_COUNT];
+
+    for (i = 1; i < PROCESS_COUNT; i++)
+    {
+        pid_arr[i] = create_process(sys, i);
+    }
+}
 
 balance_t *parse_arguments(char **args)
 {
@@ -34,7 +61,7 @@ int main(int argc, char **argv)
     balance_t* balances = parse_arguments(argv);
     open_log_files();
     System_t *sys = initialize_System(do_smth, PROCESS_COUNT);
-
+    fork_children(System_t *sys);
     /*
         code here
         OKEY
