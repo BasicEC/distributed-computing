@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "banking.h"
 #include "self.h"
+#include "ipc.h"
 
 void transfer(void * proc_info, local_id src, local_id dst, balance_t amount) {
   
