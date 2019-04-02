@@ -13,7 +13,6 @@
 int PROCESS_COUNT;
 int CONNECTIONS_COUNT;
 
-
 int event_log_descriptor = -1;
 
 int get_events_log_descriptor()
@@ -23,7 +22,7 @@ int get_events_log_descriptor()
     return event_log_descriptor;
 }
 
-void log_events_event(char *fmt, local_id node_id, int fd,int client_id)
+void log_events_event(char *fmt, local_id node_id, int fd, int client_id)
 {
     char formated_message[64];
     int len = sprintf(formated_message, fmt, node_id, fd, client_id);
@@ -52,7 +51,7 @@ static int send_msg(int fd, const Message *msg)
     return (int)result;
 }
 
-static int  can_read(int fd)
+static int can_read(int fd)
 {
     long cur = lseek(fd, 0, SEEK_CUR);
     long end = lseek(fd, 0, SEEK_END);
@@ -152,7 +151,6 @@ int receive_any(void *self, Message *msg)
             if (i == selft->id)
                 continue;
             if (can_read(selft->connections[i].read))
-//            if (1)
             {
                 r_result = read_msg(selft->connections[i].read, msg);
                 if (r_result <= 0)
@@ -163,10 +161,8 @@ int receive_any(void *self, Message *msg)
                 return 0;
             }
         }
-
     }
 }
-
 
 int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 {
@@ -174,15 +170,15 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
     MessageHeader *header = (MessageHeader *)malloc(sizeof(MessageHeader));
     header->s_magic = MESSAGE_MAGIC;
     header->s_payload_len = (uint16_t)strlen(text);
-//    header->s_payload_len = 0;
+    //    header->s_payload_len = 0;
     header->s_type = type;
     // header->s_local_time
     msg->s_header = *header;
-//    strcpy(msg->s_payload, text);
+    //    strcpy(msg->s_payload, text);
 
     send_multicast(proc, msg);
     usleep(1);
-    Message* msgs[proc->connection_count];
+    Message *msgs[proc->connection_count];
     for (int i = 1; i < proc->connection_count - 1; i++)
     {
         msgs[i] = (Message *)malloc(sizeof(Message));
@@ -194,7 +190,7 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 
 void do_smth()
 {
-//    sleep(2);
+    //    sleep(2);
 }
 
 static int pipes_log_descriptor = -1;
@@ -252,7 +248,6 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
     log_pipe_write(send->id, fd[1], receive->id);
 }
 
-
 void establish_all_connections(System_t *sys)
 {
     int i, j;
@@ -269,21 +264,26 @@ void establish_all_connections(System_t *sys)
     }
 }
 
-
-void close_connection(connection_t* connection){
+void close_connection(connection_t *connection)
+{
     close(connection->read);
     close(connection->write);
 }
 
-void close_all_unused_connections(System_t* sys, int index){
+void close_all_unused_connections(System_t *sys, int index)
+{
     int i;
-    for (i = 0; i < sys->process_count; i++){
-        if (i == index) continue;
+    for (i = 0; i < sys->process_count; i++)
+    {
+        if (i == index)
+            continue;
         int j;
-        proc_info_t* info_i = sys->processes + i;
-        for (j = 0; j < sys->process_count; j++){
-            proc_info_t* info_j = sys->processes + j;
-            if (i!=j && j != index) {
+        proc_info_t *info_i = sys->processes + i;
+        for (j = 0; j < sys->process_count; j++)
+        {
+            proc_info_t *info_j = sys->processes + j;
+            if (i != j && j != index)
+            {
                 close_connection(info_i->connections + j);
                 close_connection(info_j->connections + i);
             }
@@ -304,8 +304,8 @@ int create_process(System_t *sys, int index)
     }
     if (id == 0)
     {
-//        usleep((9-index)*10000);
-        proc_info_t* proc = sys->processes + index;
+        //        usleep((9-index)*10000);
+        proc_info_t *proc = sys->processes + index;
         close_all_unused_connections(sys, index);
         send_to_all_and_wait_all(proc, "hellohellohellohellohellohellohellohellohelloyes", STARTED);
         (*proc).task();
@@ -345,21 +345,22 @@ void run(System_t *sys)
     {
         pid_arr[i] = create_process(sys, i);
     }
-    close_all_unused_connections(sys,0);
+    close_all_unused_connections(sys, 0);
     Message msg_start[PROCESS_COUNT - 1];
     for (i = 0; i < PROCESS_COUNT - 1; i++)
     {
-        proc_info_t* info = sys->processes;
-        receive_any(info,(msg_start+i));
+        proc_info_t *info = sys->processes;
+        receive_any(info, (msg_start + i));
     }
 
     Message msg_end[PROCESS_COUNT - 1];
     for (i = 0; i < PROCESS_COUNT - 1; i++)
     {
-        proc_info_t* info = sys->processes;
-        receive_any(info,(msg_end+i));
+        proc_info_t *info = sys->processes;
+        receive_any(info, (msg_end + i));
     }
-    for (i = 0; i < PROCESS_COUNT -1; i++){
+    for (i = 0; i < PROCESS_COUNT - 1; i++)
+    {
         wait(NULL);
     }
 }
@@ -367,8 +368,9 @@ void run(System_t *sys)
 void parse_arguments(char **args)
 {
     void *ptr = NULL;
-    if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0) {
-        PROCESS_COUNT = (short) strtol(args[2], ptr, 10) + 1;
+    if (strcmp(args[1], "-p") == 0 || strcmp(args[1], "-P") == 0)
+    {
+        PROCESS_COUNT = (short)strtol(args[2], ptr, 10) + 1;
         CONNECTIONS_COUNT = PROCESS_COUNT;
     }
 }
