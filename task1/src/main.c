@@ -14,19 +14,174 @@ int PROCESS_COUNT;
 int CONNECTIONS_COUNT;
 
 
+int event_log_descriptor = -1;
+
+int get_events_log_descriptor()
+{
+    if (event_log_descriptor == -1)
+        event_log_descriptor = open(events_log, O_CREAT | O_APPEND | O_WRONLY, 0777);
+    return event_log_descriptor;
+}
+
+void log_events_event(char *fmt, local_id node_id, int fd,int client_id)
+{
+    char formated_message[64];
+    int len = sprintf(formated_message, fmt, node_id, fd, client_id);
+
+    puts(formated_message);
+    write(get_events_log_descriptor(), formated_message, len);
+}
+
+void log_events_read(local_id node_id, int fd, int client_id)
+{
+    log_events_event("Node %d receive message from %d file descriptor (node %d)\n", node_id, fd, client_id);
+}
+
+void log_events_write(local_id node_id, int fd, int client_id)
+{
+    log_events_event("Node %d send message to %d file descriptor (node %d)\n", node_id, fd, client_id);
+}
+
+static int send_msg(int fd, const Message *msg)
+{
+    if (fd == 0 || msg == NULL)
+        return -1;
+
+    ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
+
+    return (int)result;
+}
+
+static int  can_read(int fd)
+{
+    long cur = lseek(fd, 0, SEEK_CUR);
+    long end = lseek(fd, 0, SEEK_END);
+
+    if (end > cur)
+    {
+        lseek(fd, cur, SEEK_SET);
+        return 0;
+    }
+    return 1;
+}
+
+static int read_msg(int fd, Message *msg)
+{
+    if (fd == 0 || msg == NULL)
+        return -1;
+
+    ssize_t result0;
+    ssize_t result1;
+    MessageHeader mh;
+
+    result0 = read(fd, &mh, sizeof(MessageHeader));
+    if (result0 < 0)
+        return (int)result0;
+
+    msg->s_header = mh;
+
+    char buf[mh.s_payload_len];
+    result1 = read(fd, buf, mh.s_payload_len);
+    if (result1 < 0)
+        return (int)result1;
+    strcpy(msg->s_payload, buf);
+
+    return (int)(result0 + result1);
+}
+
+int send(void *self, local_id dst, const Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t w_result;
+    int pipefd = get_w_pipefd_by_id((proc_info_t *)selft, dst);
+
+    if (pipefd < 0)
+        return pipefd;
+
+    w_result = send_msg(pipefd, msg);
+
+    if (w_result < 0)
+        return w_result;
+
+    return 0;
+}
+
+int send_multicast(void *self, const Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t w_result;
+
+    for (int i = 0; i < selft->connection_count; ++i)
+    {
+        if (i == selft->id)
+            continue;
+        w_result = send_msg(selft->connections[i].write, msg);
+        log_events_write(selft->id, selft->connections[i].write, i);
+        if (w_result < 0)
+            return w_result;
+    }
+
+    return 0;
+}
+
+int receive(void *self, local_id dst, Message *msg)
+{
+    ssize_t r_result = 0;
+    int pipefd = get_r_pipefd_by_id((proc_info_t *)self, dst);
+
+    while (r_result == 0)
+    {
+        r_result = read_msg(pipefd, msg);
+    }
+
+    if (r_result < 0)
+        return r_result;
+
+    return 0;
+}
+
+int receive_any(void *self, Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t r_result = 0;
+
+    while (1)
+    {
+        for (int i = selft->connection_count; i > 0; --i)
+        {
+            if (i == selft->id)
+                continue;
+            if (can_read(selft->connections[i].read))
+//            if (1)
+            {
+                r_result = read_msg(selft->connections[i].read, msg);
+                if (r_result <= 0)
+                    continue;
+                if (!r_result)
+                    continue;
+                log_events_read(selft->id, selft->connections[i].read, i);
+                return 0;
+            }
+        }
+
+    }
+}
+
+
 int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 {
     Message *msg = (Message *)malloc(sizeof(Message));
     MessageHeader *header = (MessageHeader *)malloc(sizeof(MessageHeader));
     header->s_magic = MESSAGE_MAGIC;
     header->s_payload_len = (uint16_t)strlen(text);
+//    header->s_payload_len = 0;
     header->s_type = type;
     // header->s_local_time
     msg->s_header = *header;
-    strcpy(msg->s_payload, text);
+//    strcpy(msg->s_payload, text);
 
     send_multicast(proc, msg);
-
+    usleep(1);
     Message* msgs[proc->connection_count];
     for (int i = 1; i < proc->connection_count - 1; i++)
     {
@@ -39,6 +194,7 @@ int send_to_all_and_wait_all(proc_info_t *proc, char *text, MessageType type)
 
 void do_smth()
 {
+//    sleep(2);
 }
 
 static int pipes_log_descriptor = -1;
@@ -74,7 +230,7 @@ void log_pipe_write(local_id node_id, int fd, local_id client_id)
 void disable_blocks(int fd)
 {
     int flags = fcntl(fd, F_GETFL);
-    fcntl(fd, F_SETFL, flags);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
 int create_pipe_without_blocks(int *fd)
@@ -100,7 +256,7 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
 void establish_all_connections(System_t *sys)
 {
     int i, j;
-    for (i = 1; i < sys->process_count; i++)
+    for (i = 0; i < sys->process_count; i++)
     {
         for (j = 0; j < sys->process_count; j++)
         {
@@ -151,9 +307,9 @@ int create_process(System_t *sys, int index)
 //        usleep((9-index)*10000);
         proc_info_t* proc = sys->processes + index;
         close_all_unused_connections(sys, index);
-        send_to_all_and_wait_all(proc, "hello", STARTED);
+        send_to_all_and_wait_all(proc, "hellohellohellohellohellohellohellohellohelloyes", STARTED);
         (*proc).task();
-        send_to_all_and_wait_all(proc, "done", DONE);
+        send_to_all_and_wait_all(proc, "donehellohellohellohellohello", DONE);
         _exit(0);
     }
     return id;
@@ -203,6 +359,9 @@ void run(System_t *sys)
         proc_info_t* info = sys->processes;
         receive_any(info,(msg_end+i));
     }
+    for (i = 0; i < PROCESS_COUNT -1; i++){
+        wait(NULL);
+    }
 }
 
 void parse_arguments(char **args)
@@ -217,6 +376,7 @@ void parse_arguments(char **args)
 int main(int argc, char **argv)
 {
     parse_arguments(argv);
+    get_events_log_descriptor();
     System_t *sys = initialize_System(do_smth);
     establish_all_connections(sys);
     run(sys);

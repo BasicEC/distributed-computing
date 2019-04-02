@@ -30,4 +30,5 @@ int get_w_pipefd_by_id(proc_info_t *self, local_id dst);
 
 int get_r_pipefd_by_id(proc_info_t *self, local_id dst);
 
+
 #endif //__IFMO_DISTRIBUTED_CLASS_SELF__H
