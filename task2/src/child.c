@@ -1,20 +1,74 @@
 #include "child.h"
 
-static void send_to_all_and_wait_all(proc_info_t *proc, MessageType type)
+static void send_to_all_and_wait_all(proc_info_t *proc)
 {
     char payload[COMMON_PAYLOAD_LEN];
     int len = sprintf(payload, log_started_fmt, get_physical_time(), id, getpid(), getppid(), proc->balance);
 
     Message msg = create_message(payload, len, STARTED);
-
     send_multicast(proc, msg);
-    Message *msgs[proc->connection_count];
+
+    log_event(_STARTED, proc->id, to.s_dst, to.s_amount);
+
+    Message msg;
     for (int i = 1; i < proc->connection_count - 1; i++)
     {
-        msgs[i] = (Message *)malloc(sizeof(Message));
         //не receive_any потому что какой-то процесс может успеть послать 2 сообщения?
-        receive(proc, proc->id, msgs[i]);
+        receive(proc, proc->id, &msg);
     }
+}
+
+static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *history, timestamp_t last_time)
+{
+    TransferOrder to;
+    memcpy(&to, msg->s_payload, sizeof(TransferOrder));
+    timestamp_t new_time = get_physical_time();
+
+    if (to.s_src == proc->id)
+    {
+        proc->balance -= to.s_amount;
+        send(proc, to.s_dst, msg);
+        log_event(_TRANSFER_OUT, proc->id, to.s_dst, to.s_amount);
+    }
+    else if (to.s_dst == proc->id)
+    {
+        proc->balance += to.s_amount;
+        Message reply = create_message(NULL, 0, ACK);
+        send(proc, 0, &reply);
+        log_event(_TRANSFER_IN, proc->id, to.s_src, to.s_amount);
+    }
+
+    BalanceState state;
+    state.s_balance = proc->balance;
+    state.s_time = 0;
+    state.s_balance_pending_in = 0;
+    history[new_time] = state;
+
+    for (timestamp_t i = last_time + 1; last_time < new_time; last_time++)
+    {
+        history[i] = history[last_time];
+        history[i].s_time = i;
+    }
+
+    return new_time;
+}
+
+static void send_history(proc_info_t *proc, BalanceHistory *history)
+{
+    char payload[MAX_PAYLOAD_LEN];
+    int len = sizeof(BalanceHistory);
+    memcpy(&payload, history, len);
+    Message history_msg = create_message(payload, len, BALANCE_HISTORY);
+    send(proc, 0, &history_msg); //0 - parent id
+}
+
+static int send_done(proc_info_t *proc)
+{
+    char payload[COMMON_PAYLOAD_LEN];
+    int len = sprintf(payload, log_done_fmt, get_physical_time(), proc->id, proc->balance);
+    Message msg = create_message(payload, len, DONE);
+    send(proc, 0, &msg); //send to parent done
+    log_event(_DONE, proc->id, to.s_dst, to.s_amount);
 }
 
 static void main_work(proc_info_t *proc)
@@ -23,10 +77,8 @@ static void main_work(proc_info_t *proc)
     BalanceState state;
     Message msg;
     timestamp_t last_time = 0;
-    int done_count = 0;
-    int balance = proc->balance;
     history.s_id = proc->id;
-    state.s_balance = balance;
+    state.s_balance = proc->balance;
     state.s_time = 0;
     state.s_balance_pending_in = 0;
     history.s_history[0] = state;
@@ -37,14 +89,12 @@ static void main_work(proc_info_t *proc)
         switch (msg.s_header.s_type)
         {
         case TRANSFER:
-            on_transfer();
+            last_time = on_transfer(proc, &msg, &history, last_time);
             break;
         case STOP:
-            on_stop();
-            break;
-        case DONE:
-            on_done();
-            break;
+            send_done(proc);              //send done to parent
+            send_history(proc, &history); //send history
+            return;
         default:
             break;
         }
@@ -56,5 +106,7 @@ void child_work(System_t *sys, local_id id)
     proc_info_t *cur_proc = sys->processes + id;
 
     close_all_unused_connections(sys, id);
-    send_to_all_and_wait_all(cur_proc, type);
+    send_to_all_and_wait_all(cur_proc;
+    main_work(cur_proc);
+    exit(0);
 }
