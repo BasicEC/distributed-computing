@@ -76,42 +76,45 @@ static int send_done(proc_info_t *proc)
     return 0;
 }
 
-void main_work(proc_info_t *proc)
-{
-    BalanceHistory history;
-    BalanceState state;
-    Message msg;
-    timestamp_t last_time = 0;
-    history.s_id = proc->id;
-    state.s_balance = proc->balance;
-    state.s_time = 0;
-    state.s_balance_pending_in = 0;
-    history.s_history[0] = state;
-//    int i = proc->connection_count;
-    while (1)
-    {
-        receive_any(proc, &msg);
-        switch (msg.s_header.s_type)
-        {
-        case TRANSFER:
-            last_time = on_transfer(proc, &msg, &history, last_time);
-            break;
-        case STOP:
-            send_done(proc);              //send done to parent
-            send_history(proc, &history); //send history
-            return;
-        default:
-            break;
-        }
-    }
-}
+//void main_work(proc_info_t *proc)
+//{
+//    BalanceHistory history;
+//    BalanceState state;
+//    Message msg;
+//    timestamp_t last_time = 0;
+//    history.s_id = proc->id;
+//    state.s_balance = proc->balance;
+//    state.s_time = 0;
+//    state.s_balance_pending_in = 0;
+//    history.s_history[0] = state;
+////    int i = proc->connection_count;
+//    while (1)
+//    {
+//        receive_any(proc, &msg);
+//        switch (msg.s_header.s_type)
+//        {
+//        case TRANSFER:
+//            last_time = on_transfer(proc, &msg, &history, last_time);
+//            break;
+//        case STOP:
+//            send_done(proc);              //send done to parent
+//            send_history(proc, &history); //send history
+//            return;
+//        default:
+//            break;
+//        }
+//    }
+//}
+//
+//void child_work(System_t *sys, local_id id)
+//{
+//    proc_info_t *cur_proc = sys->processes + id;
+//
+//    close_all_unused_connections(sys, id);
+//    send_to_all_and_wait_all(cur_proc);
+//    main_work(cur_proc);
+//    exit(0);
+//}
 
-void child_work(System_t *sys, local_id id)
-{
-    proc_info_t *cur_proc = sys->processes + id;
-
-    close_all_unused_connections(sys, id);
-    send_to_all_and_wait_all(cur_proc);
-    main_work(cur_proc);
-    exit(0);
-}
+void main_work(){}
+void child_work(){}

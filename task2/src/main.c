@@ -19,29 +19,29 @@ int PROCESS_COUNT;
 
 void create_process(System_t *sys, local_id index)
 {
-    pid_t id = fork();
-    if (id < 0)
-    {
-        perror("unable to create process");
-        errno = -1;
-        exit(errno);
-    }
-    if (id == 0)
-    {
-        proc_info_t *proc = sys->processes + index;
-        (*proc).task(index);
-        exit(0);
-    }    
+//    pid_t id = fork();
+//    if (id < 0)
+//    {
+//        perror("unable to create process");
+//        errno = -1;
+//        exit(errno);
+//    }
+//    if (id == 0)
+//    {
+//        proc_info_t *proc = sys->processes + index;
+//        (*proc).task();
+//        exit(0);
+//    }
 }
 
-//int *fork_children(System_t *sys)
-//{
-//    for (local_id i = 1; i < PROCESS_COUNT; i++)
-//    {
-//        create_process(sys, i);
-//    }
-//    return 0;
-//}typedef void (*process_task)(local_id id);
+int *fork_children(System_t *sys)
+{
+    for (local_id i = 1; i < PROCESS_COUNT; i++)
+    {
+        create_process(sys, i);
+    }
+    return 0;
+}
 
 balance_t *parse_arguments(char **args)
 {
@@ -55,7 +55,7 @@ balance_t *parse_arguments(char **args)
 
     for (int i = 0; i < PROCESS_COUNT - 1; i++)
         balances[i] = (balance_t)atoi(args[i + 3]);
-
+    return balances;
 }
 
 
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     balance_t *balances = parse_arguments(argv);
     open_log_files();
     System_t *sys = initialize_System(child_work, main_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
-    fork_children(sys);
+//    fork_children(sys);
     /*
         code here
         OKEY
