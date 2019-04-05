@@ -34,13 +34,14 @@ void create_process(System_t *sys, local_id index)
     }    
 }
 
-int *fork_children(System_t *sys)
-{
-    for (local_id i = 1; i < PROCESS_COUNT; i++)
-    {
-        create_process(sys, i);
-    }
-}typedef void (*process_task)(local_id id);
+//int *fork_children(System_t *sys)
+//{
+//    for (local_id i = 1; i < PROCESS_COUNT; i++)
+//    {
+//        create_process(sys, i);
+//    }
+//    return 0;
+//}typedef void (*process_task)(local_id id);
 
 balance_t *parse_arguments(char **args)
 {
@@ -54,6 +55,7 @@ balance_t *parse_arguments(char **args)
 
     for (int i = 0; i < PROCESS_COUNT - 1; i++)
         balances[i] = (balance_t)atoi(args[i + 3]);
+
 }
 
 

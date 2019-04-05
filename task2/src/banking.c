@@ -5,6 +5,8 @@
 #include "self.h"
 #include "ipc.h"
 
+timestamp_t get_physical_time(){}
+
 void transfer(void * proc_info, local_id src, local_id dst, balance_t amount) {
   
   TransferOrder to;

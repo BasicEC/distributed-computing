@@ -73,6 +73,7 @@ static int send_done(proc_info_t *proc)
     Message msg = create_message(payload, len, DONE);
     send(proc, 0, &msg); //send to parent done
     log_event(_DONE, proc->id, 0, 0);
+    return 0;
 }
 
 void main_work(proc_info_t *proc)

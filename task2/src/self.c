@@ -12,6 +12,14 @@ int get_r_pipefd_by_id(proc_info_t *self, local_id dst)
     return self->connections[dst].read;
 }
 
+void initialize_proc(proc_info_t *proc, process_task task, int conn_count)
+{
+    proc->task = task;
+    proc->connection_count = conn_count;
+    proc->connections = malloc(sizeof(connection_t) * (0));
+}
+
+
 static void initialize_child(proc_info_t *child, process_task task, int conn_count, balance_t balance, local_id id)
 {
     child->id = id;
@@ -24,13 +32,6 @@ static void initialize_parent(proc_info_t *parent, process_task task, int conn_c
     parent->id = 0;
     initialize_proc(parent, task, conn_count);
 }
-
-//void initialize_proc(proc_info_t *proc, process_task task, int conn_count)
-//{
-//    proc->task = task;
-//    proc->connection_count = conn_count;
-//    proc->connections = malloc(sizeof(connection_t) * (parent->connection_count));
-//}
 
 System_t *initialize_System(process_task c_task, process_task p_task, int proc_count, balance_t *balances)
 {

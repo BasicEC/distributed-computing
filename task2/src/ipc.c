@@ -48,13 +48,13 @@ static int read_msg(int fd, Message *msg)
 int send(void *self, local_id dst, const Message *msg)
 {
     proc_info_t *selft = (proc_info_t *)self;
-    ssize_t w_result;
+    ssize_t w_result = 0;
     int pipefd = get_w_pipefd_by_id((proc_info_t *)selft, dst);
 
     if (pipefd < 0)
         return pipefd;
 
-    w_result = send_msg(pipefd, msg);
+//    w_result = send_msg(pipefd, msg);
 
     if (w_result < 0)
         return w_result;
@@ -65,13 +65,13 @@ int send(void *self, local_id dst, const Message *msg)
 int send_multicast(void *self, const Message *msg)
 {
     proc_info_t *selft = (proc_info_t *)self;
-    ssize_t w_result;
+    ssize_t w_result = 0;
 
     for (int i = 0; i < selft->connection_count; ++i)
     {
         if (i == selft->id)
             continue;
-        w_result = send_msg(selft->connections[i].write, msg);
+//        w_result = send_msg(selft->connections[i].write, msg);
         //log
         if (w_result < 0)
             return w_result;
