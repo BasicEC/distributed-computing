@@ -10,8 +10,12 @@
 #include "self.h"
 #include "banking.h"
 #include "logs.h"
+#include "child.h"
 
 int PROCESS_COUNT;
+
+
+
 
 void create_process(System_t *sys, local_id index)
 {
@@ -25,7 +29,7 @@ void create_process(System_t *sys, local_id index)
     if (id == 0)
     {
         proc_info_t *proc = sys->processes + index;
-        (*proc).task(sys, index);
+        (*proc).task(index);
         exit(0);
     }    
 }
@@ -36,7 +40,7 @@ int *fork_children(System_t *sys)
     {
         create_process(sys, i);
     }
-}
+}typedef void (*process_task)(local_id id);
 
 balance_t *parse_arguments(char **args)
 {
@@ -52,12 +56,13 @@ balance_t *parse_arguments(char **args)
         balances[i] = (balance_t)atoi(args[i + 3]);
 }
 
+
 int main(int argc, char **argv)
 {
     balance_t *balances = parse_arguments(argv);
     open_log_files();
-    System_t *sys = initialize_System(child_work, parent_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
-    fork_children(System_t * sys);
+    System_t *sys = initialize_System(child_work, main_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
+    fork_children(sys);
     /*
         code here
         OKEY

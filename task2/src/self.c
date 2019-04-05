@@ -25,12 +25,12 @@ static void initialize_parent(proc_info_t *parent, process_task task, int conn_c
     initialize_proc(parent, task, conn_count);
 }
 
-static void initialize_proc(proc_info_t *proc, process_task task, int conn_count)
-{
-    proc->task = task;
-    proc->connection_count = conn_count;
-    proc->connections = malloc(sizeof(connection_t) * (parent->connection_count));
-}
+//void initialize_proc(proc_info_t *proc, process_task task, int conn_count)
+//{
+//    proc->task = task;
+//    proc->connection_count = conn_count;
+//    proc->connections = malloc(sizeof(connection_t) * (parent->connection_count));
+//}
 
 System_t *initialize_System(process_task c_task, process_task p_task, int proc_count, balance_t *balances)
 {
@@ -39,7 +39,7 @@ System_t *initialize_System(process_task c_task, process_task p_task, int proc_c
     proc_info_t *children = (proc_info_t *)malloc(sizeof(proc_info_t) * sys->process_count);
     sys->processes = children;
 
-    initialize_parent(&sys->processes[i], p_task, proc_count);
+    initialize_parent(&sys->processes[0], p_task, proc_count);
     
     int i;
     for (i = 1; i < sys->process_count; i++)

@@ -19,5 +19,6 @@
 #define COMMON_PAYLOAD_LEN 256 
 
 void child_work(System_t* proc_info, local_id id);
+void main_work(proc_info_t* info    );
 
 #endif

@@ -4,8 +4,12 @@
 #include "ipc.h"
 #include "banking.h"
 
-typedef void (*process_task)(System_t* proc_info, local_id id);
 
+//typedef void (*process_task)();
+
+
+
+typedef void (*process_task)(local_id id);
 
 typedef struct
 {
@@ -27,6 +31,12 @@ typedef struct
     int process_count;
     proc_info_t *processes;
 } System_t;
+
+//typedef void (*process_task)(System_t* proc_info, local_id id);
+
+
+
+
 
 System_t *initialize_System(process_task c_task, process_task p_task, int proc_count, balance_t *balances);
 

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
-
+#include "self.h"
 #include "ipc.h"
 #include "common.h"
 #include "pa2345.h"
@@ -15,6 +15,6 @@
 
 void close_all_unused_connections(System_t *sys, int index);
 
-Message create_message(char* payload, uint16_t len, int16_t type, timestamp_t time);
+Message create_message(char* payload, uint16_t len, int16_t type);
 
 #endif

@@ -1,3 +1,7 @@
+#include "self.h"
+
+
+
 static void close_connection(connection_t *connection)
 {
     close(connection->read);
@@ -32,11 +36,11 @@ Message create_message(char *payload, uint16_t len, int16_t type)
     Message msg;
     if (payload != NULL)
         memcpy(&msg.s_payload, payload, len);
-    msg.s_header = create_message_header(magic, len, type);
+//    msg.s_header = create_message_header(magic, len, type);
     return msg;
 }
 
-static MessageHeader create_message_header(uint16_t len, int16_t type)
+MessageHeader create_message_header(uint16_t len, int16_t type)
 {
     MessageHeader header;
     header.s_magic = MESSAGE_MAGIC;
