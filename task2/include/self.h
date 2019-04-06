@@ -6,11 +6,7 @@
 
 
 //typedef void (*process_task)();
-
-struct System_t;
-
-typedef void (*process_task)(void);
-
+typedef void (*process_task)(local_id id);
 
 typedef struct
 {
@@ -22,12 +18,10 @@ typedef struct
 {
     local_id id;
     balance_t balance;
-    process_task* task;
+    process_task task;
     int connection_count;
     connection_t *connections;
 } proc_info_t;
-
-//typedef void (*process_task)(proc_info_t* proc_info, local_id id);
 
 typedef struct
 {
@@ -36,7 +30,7 @@ typedef struct
 } System_t;
 
 
-
+System_t* SYSTEM;
 
 
 

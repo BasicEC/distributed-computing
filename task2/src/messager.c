@@ -1,3 +1,6 @@
+#include <string.h>
+#include <unistd.h>
+#include <logs.h>
 #include "self.h"
 
 
@@ -8,7 +11,7 @@ static void close_connection(connection_t *connection)
     close(connection->write);
 }
 
-void close_all_unused_connections(System_t *sys, int index)
+void close_all_unused_connections(System_t* sys, int index)
 {
     int i;
     for (i = 0; i < sys->process_count; i++)
@@ -23,10 +26,14 @@ void close_all_unused_connections(System_t *sys, int index)
             if (i != j && j != index)
             {
                 close_connection(info_i->connections + j);
+//                log_pipe(CLOSE, index, i, j, fd[0]);
                 close_connection(info_j->connections + i);
+//                log_pipe(CLOSE, index, j, i, fd[0]);
             }
-            else if (j == index)
+            else if (j == index){
                 close_connection(info_i->connections + j);
+//                log_pipe(CLOSE, index, j, i, fd[0]);
+            }
         }
     }
 }

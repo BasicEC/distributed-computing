@@ -19,19 +19,19 @@ int PROCESS_COUNT;
 
 void create_process(System_t *sys, local_id index)
 {
-//    pid_t id = fork();
-//    if (id < 0)
-//    {
-//        perror("unable to create process");
-//        errno = -1;
-//        exit(errno);
-//    }
-//    if (id == 0)
-//    {
-//        proc_info_t *proc = sys->processes + index;
-//        (*proc).task();
-//        exit(0);
-//    }
+    pid_t id = fork();
+    if (id < 0)
+    {
+        perror("unable to create process");
+        errno = -1;
+        exit(errno);
+    }
+    if (id == 0)
+    {
+        proc_info_t *proc = sys->processes + index;
+        (*proc).task(index);
+        exit(0);
+    }
 }
 
 int *fork_children(System_t *sys)
@@ -63,8 +63,8 @@ int main(int argc, char **argv)
 {
     balance_t *balances = parse_arguments(argv);
     open_log_files();
-    System_t *sys = initialize_System(child_work, main_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
-//    fork_children(sys);
+    SYSTEM = initialize_System(child_work, parent_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
+    fork_children(SYSTEM);
     /*
         code here
         OKEY
