@@ -13,13 +13,16 @@ static void send_to_all_and_wait_all(proc_info_t *proc)
     Message msg = create_message(payload, len, STARTED);
     send_multicast(proc, &msg);
 
-    log_event(_STARTED, proc->id, 0, 0);
+    log_event(_STARTED, proc->id, 0, proc->balance);
 
-    for (int i = 1; i < proc->connection_count - 1; i++)
+    for (int i = 1; i < proc->connection_count; i++)
     {
+        if (i == proc->id)
+            continue;
         //не receive_any потому что какой-то процесс может успеть послать 2 сообщения?
-        receive(proc, proc->id, &msg);
+        receive(proc, (local_id)i, &msg);
     }
+    log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
 }
 
 static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *history, timestamp_t last_time)
@@ -78,32 +81,32 @@ static int send_done(proc_info_t *proc)
 
 void main_work(proc_info_t *proc)
 {
-    BalanceHistory history;
-    BalanceState state;
-    Message msg;
-    timestamp_t last_time = 0;
-    history.s_id = proc->id;
-    state.s_balance = proc->balance;
-    state.s_time = 0;
-    state.s_balance_pending_in = 0;
-    history.s_history[0] = state;
-//    int i = proc->connection_count;
-    while (1)
-    {
-        receive_any(proc, &msg);
-        switch (msg.s_header.s_type)
-        {
-        case TRANSFER:
-            last_time = on_transfer(proc, &msg, &history, last_time);
-            break;
-        case STOP:
-            send_done(proc);              //send done to parent
-            send_history(proc, &history); //send history
-            return;
-        default:
-            break;
-        }
-    }
+//    BalanceHistory history;
+//    BalanceState state;
+//    Message msg;
+//    timestamp_t last_time = 0;
+//    history.s_id = proc->id;
+//    state.s_balance = proc->balance;
+//    state.s_time = 0;
+//    state.s_balance_pending_in = 0;
+//    history.s_history[0] = state;
+////    int i = proc->connection_count;
+//    while (1)
+//    {
+//        receive_any(proc, &msg);
+//        switch (msg.s_header.s_type)
+//        {
+//        case TRANSFER:
+//            last_time = on_transfer(proc, &msg, &history, last_time);
+//            break;
+//        case STOP:
+//            send_done(proc);              //send done to parent
+//            send_history(proc, &history); //send history
+//            return;
+//        default:
+//            break;
+//        }
+//    }
 }
 
 void child_work(local_id id)
@@ -115,5 +118,11 @@ void child_work(local_id id)
     main_work(cur_proc);
     exit(0);
 }
-void parent_work(local_id id){};
+
+void parent_work(System_t* system, pid_t* children)
+{
+    int i;
+    for (i = 0;i < system->process_count - 1; i++)
+        wait(NULL);
+};
 

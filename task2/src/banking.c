@@ -4,9 +4,12 @@
 #include "banking.h"
 #include "self.h"
 #include "ipc.h"
+#include "sys/time.h"
 
 timestamp_t get_physical_time(){
-  return 0;
+struct  timeval currentTime;
+gettimeofday(&currentTime, NULL);
+  return (timestamp_t)(currentTime.tv_usec / 1000 + (currentTime.tv_sec % 10) * 1000);
 }
 
 void transfer(void * proc_info, local_id src, local_id dst, balance_t amount) {

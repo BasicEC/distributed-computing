@@ -21,5 +21,5 @@
 
 void child_work(local_id id);
 void main_work(proc_info_t* info);
-void parent_work(local_id id);
+void parent_work(System_t* system, pid_t* id);
 #endif

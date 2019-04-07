@@ -17,7 +17,7 @@ int PROCESS_COUNT;
 
 
 
-void create_process(System_t *sys, local_id index)
+pid_t create_process(System_t *sys, local_id index)
 {
     pid_t id = fork();
     if (id < 0)
@@ -32,15 +32,17 @@ void create_process(System_t *sys, local_id index)
         (*proc).task(index);
         exit(0);
     }
+    return id;
 }
 
-int *fork_children(System_t *sys)
+pid_t* fork_children(System_t *sys)
 {
+    pid_t* children = (pid_t*)malloc(sizeof(pid_t)*(PROCESS_COUNT - 1));
     for (local_id i = 1; i < PROCESS_COUNT; i++)
     {
-        create_process(sys, i);
+        children[i-1] = create_process(sys, i);
     }
-    return 0;
+    return children;
 }
 
 balance_t *parse_arguments(char **args)
@@ -64,13 +66,8 @@ int main(int argc, char **argv)
     balance_t *balances = parse_arguments(argv);
     open_log_files();
     SYSTEM = initialize_System(child_work, parent_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
-    fork_children(SYSTEM);
-    /*
-        code here
-        OKEY
-        why there is no code? :(
-    */
-
+    pid_t* children = fork_children(SYSTEM);
+    parent_work(SYSTEM, children);
     close_log_files();
     return 0;
 }
