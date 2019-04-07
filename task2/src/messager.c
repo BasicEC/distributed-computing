@@ -43,16 +43,7 @@ void close_all_unused_connections(System_t *sys, int index)
     }
 }
 
-Message create_message(char *payload, uint16_t len, int16_t type)
-{
-    Message msg;
-    if (payload != NULL)
-        memcpy(&msg.s_payload, payload, len);
-//    msg.s_header = create_message_header(magic, len, type);
-    return msg;
-}
-
-MessageHeader create_message_header(uint16_t len, int16_t type)
+MessageHeader create_message_header(uint16_t magic, uint16_t len, int16_t type)
 {
     MessageHeader header;
     header.s_magic = MESSAGE_MAGIC;
@@ -61,3 +52,13 @@ MessageHeader create_message_header(uint16_t len, int16_t type)
     header.s_local_time = get_physical_time();
     return header;
 }
+
+Message create_message(uint16_t magic,char *payload, uint16_t len, int16_t type)
+{
+    Message msg;
+    if (payload != NULL)
+        memcpy(&msg.s_payload, payload, len);
+    msg.s_header = create_message_header(magic, len, type);
+    return msg;
+}
+

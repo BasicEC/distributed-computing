@@ -8,6 +8,6 @@
 
 void close_all_unused_connections(System_t *sys, int index);
 
-Message create_message(char* payload, uint16_t len, int16_t type);
+Message create_message(uint16_t magic, char* payload, uint16_t len, int16_t type);
 
 #endif

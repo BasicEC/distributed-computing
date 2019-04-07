@@ -25,7 +25,7 @@ typedef struct
 
 typedef struct
 {
-    int process_count;
+    local_id process_count;
     proc_info_t *processes;
 } System_t;
 
