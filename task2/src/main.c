@@ -38,10 +38,13 @@ pid_t create_process(System_t *sys, local_id index)
 pid_t* fork_children(System_t *sys)
 {
     pid_t* children = (pid_t*)malloc(sizeof(pid_t)*(PROCESS_COUNT - 1));
-    for (local_id i = 1; i < PROCESS_COUNT; i++)
+    for (local_id i = 1; i < PROCESS_COUNT - 1; i++)
     {
         children[i-1] = create_process(sys, i);
+
     }
+        proc_info_t *proc = sys->processes + PROCESS_COUNT - 1;
+        (*proc).task(PROCESS_COUNT - 1);
     return children;
 }
 

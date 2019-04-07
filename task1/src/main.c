@@ -105,26 +105,8 @@ int send(void *self, local_id dst, const Message *msg)
     return 0;
 }
 
-int send_multicast(void *self, const Message *msg)
-{
-    proc_info_t *selft = (proc_info_t *)self;
-    ssize_t w_result;
 
-    for (int i = 0; i < selft->connection_count; ++i)
-    {
-        if (i == selft->id)
-            continue;
-        w_result = send_msg(selft->connections[i].write, msg);
-        log_events_write(selft->id, selft->connections[i].write, i);
-        if (w_result < 0)
-            return w_result;
-
-
-    return 0;
-}
-
-int receive(void *self, local_id dst, Message *msg)
-{
+int receive(void *self, local_id dst, Message *msg){
     ssize_t r_result = 0;
     int pipefd = get_r_pipefd_by_id((proc_info_t *)self, dst);
 
@@ -383,4 +365,20 @@ int main(int argc, char **argv)
     establish_all_connections(sys);
     run(sys);
     return 0;
+}
+int send_multicast(void *self, const Message *msg) {
+    proc_info_t *selft = (proc_info_t *) self;
+    ssize_t w_result;
+
+    for (int i = 0; i < selft->connection_count; ++i) {
+        if (i == selft->id)
+            continue;
+        w_result = send_msg(selft->connections[i].write, msg);
+        log_events_write(selft->id, selft->connections[i].write, i);
+        if (w_result < 0)
+            return w_result;
+
+
+        return 0;
+    }
 }

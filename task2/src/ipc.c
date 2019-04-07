@@ -8,6 +8,18 @@
 #include "common.h"
 #include "logs.h"
 
+
+static int send_msg(int fd, const Message *msg)
+{
+    if (fd == 0 || msg == NULL)
+        return -1;
+
+    ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
+
+    return (int)result;
+}
+
+
 static int can_read(int fd)
 {
     long cur = lseek(fd, 0, SEEK_CUR);
@@ -54,7 +66,7 @@ int send(void *self, local_id dst, const Message *msg)
     if (pipefd < 0)
         return pipefd;
 
-//    w_result = send_msg(pipefd, msg);
+    w_result = send_msg(pipefd, msg);
 
     if (w_result < 0)
         return w_result;
@@ -71,7 +83,7 @@ int send_multicast(void *self, const Message *msg)
     {
         if (i == selft->id)
             continue;
-//        w_result = send_msg(selft->connections[i].write, msg);
+        w_result = send_msg(selft->connections[i].write, msg);
         //log
         if (w_result < 0)
             return w_result;
@@ -85,7 +97,7 @@ int receive(void *self, local_id dst, Message *msg)
     ssize_t r_result = 0;
     int pipefd = get_r_pipefd_by_id((proc_info_t *)self, dst);
 
-    while (r_result == 0)
+    while (r_result <= 0)
     {
         r_result = read_msg(pipefd, msg);
     }

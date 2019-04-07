@@ -26,9 +26,8 @@ void unidirectional_connection(proc_info_t *send, proc_info_t *receive)
     int fd[2];
     create_pipe_without_blocks(fd);
     receive->connections[send->id].read = fd[0];
-    log_pipe(OPEN, 0, send->id, receive->id, fd[0]);
     send->connections[receive->id].write = fd[1];
-    log_pipe(OPEN, 0, receive->id, send->id, fd[1]);
+    log_pipe(OPEN, 0, send->id, receive->id, fd[1]);
 }
 
 void establish_all_connections(System_t *sys)
