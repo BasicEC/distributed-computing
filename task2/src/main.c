@@ -69,8 +69,8 @@ int main(int argc, char **argv)
     balance_t *balances = parse_arguments(argv);
     open_log_files();
     SYSTEM = initialize_System(child_work, parent_work, PROCESS_COUNT, balances); //todo implement parent_work, child_work!!!
-    pid_t* children = fork_children(SYSTEM);
-    parent_work(SYSTEM, children);
+    fork_children(SYSTEM);
+    parent_work(0);
     close_log_files();
     return 0;
 }

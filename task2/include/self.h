@@ -1,12 +1,13 @@
 #ifndef __IFMO_DISTRIBUTED_CLASS_SELF__H
 #define __IFMO_DISTRIBUTED_CLASS_SELF__H
 
+#include <sys/types.h>
 #include "ipc.h"
 #include "banking.h"
 
 
 //typedef void (*process_task)();
-typedef void (*process_task)(local_id id);
+typedef void (*process_task)(pid_t id);
 
 typedef struct
 {

@@ -25,9 +25,9 @@ static void send_to_all_and_wait_all(proc_info_t *proc)
     log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
 }
 
-static void send_to_all(){
-
-}
+//static void send_to_all(){
+//
+//}
 
 static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *history, timestamp_t last_time)
 {
@@ -113,7 +113,7 @@ void main_work(proc_info_t *proc)
     }
 }
 
-void child_work(local_id id)
+void child_work(pid_t id)
 {
     proc_info_t *cur_proc = SYSTEM->processes + id;
 
@@ -123,9 +123,9 @@ void child_work(local_id id)
     exit(0);
 }
 
-void parent_work(System_t* system, pid_t* children)
+void parent_work(pid_t children)
 {
-    proc_info_t* proc = system->processes;
+    proc_info_t* proc = SYSTEM->processes;
     Message message;
     for (int i = 1; i < proc->connection_count; i++)
     {
@@ -134,6 +134,6 @@ void parent_work(System_t* system, pid_t* children)
     log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
 //    bank_robbery(system->processes, system->process_count);
     Message msg = create_message(MESSAGE_MAGIC, NULL, 0, STOP);
-    send_multicast(system->processes, &msg);
-};
+    send_multicast(SYSTEM->processes, &msg);
+}
 

@@ -19,7 +19,7 @@
 //не уверен что хватит, вдруг время которое передается в сообщении занимает 100500 символов
 #define COMMON_PAYLOAD_LEN 256 
 
-void child_work(local_id id);
+void child_work(pid_t id);
 void main_work(proc_info_t* info);
-void parent_work(System_t* system, pid_t* id);
+void parent_work(pid_t id);
 #endif
