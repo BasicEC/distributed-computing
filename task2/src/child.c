@@ -39,14 +39,14 @@ static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *
     {
         proc->balance -= to.s_amount;
         send(proc, to.s_dst, msg);
-        log_event(_TRANSFER_OUT, proc->id, 0, 0);
+        log_event(_TRANSFER_OUT, proc->id, to.s_dst, to.s_amount);
     }
     else if (to.s_dst == proc->id)
     {
         proc->balance += to.s_amount;
         Message reply = create_message(MESSAGE_MAGIC,NULL, 0, ACK);
         send(proc, 0, &reply);
-        log_event(_TRANSFER_IN, proc->id, 0, 0);
+        log_event(_TRANSFER_IN, proc->id, to.s_src, to.s_amount);
     }
 
 //    BalanceState state;
@@ -132,7 +132,7 @@ void parent_work(pid_t children)
         receive(proc, (local_id)i, &message);
     }
     log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
-//    bank_robbery(system->processes, system->process_count);
+    bank_robbery(SYSTEM->processes, (local_id)(SYSTEM->process_count - 1));
     Message msg = create_message(MESSAGE_MAGIC, NULL, 0, STOP);
     send_multicast(SYSTEM->processes, &msg);
 }
