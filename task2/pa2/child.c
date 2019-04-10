@@ -8,7 +8,7 @@
 static void send_to_all_and_wait_all(proc_info_t *proc)
 {
     char payload[COMMON_PAYLOAD_LEN];
-    int len = sprintf(payload, log_started_fmt, get_physical_time(), 0, getpid(), getppid(), proc->balance);//change 0 to id
+    int len = sprintf(payload, log_started_fmt, get_physical_time(), 0, getpid(), getppid(), proc->balance); //change 0 to id
 
     Message msg = create_message(MESSAGE_MAGIC, payload, (uint16_t)len, STARTED);
     send_multicast(proc, &msg);
@@ -44,22 +44,21 @@ static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *
     else if (to.s_dst == proc->id)
     {
         proc->balance += to.s_amount;
-        Message reply = create_message(MESSAGE_MAGIC,NULL, 0, ACK);
+        Message reply = create_message(MESSAGE_MAGIC, NULL, 0, ACK);
         send(proc, 0, &reply);
         log_event(_TRANSFER_IN, proc->id, to.s_src, to.s_amount);
     }
 
-//    BalanceState state;
-//    state.s_balance = proc->balance;
-//    state.s_time = 0;
-//    state.s_balance_pending_in = 0;
-//    history[new_time] = state;
-//
-//    for (timestamp_t i = last_time + 1; last_time < new_time; last_time++)
-//    {
-//        history[i] = history[last_time];
-//        history[i].s_time = i;
-//    }
+    BalanceState state;
+    state.s_balance = proc->balance;
+    state.s_time = 0;
+    state.s_balance_pending_in = 0;
+    history->s_history[new_time] = state;
+
+    for (timestamp_t i = last_time + 1; last_time < new_time; last_time++)
+    {
+        history[i] = history[last_time];
+    }
 
     return new_time;
 }
@@ -77,7 +76,7 @@ static int send_done(proc_info_t *proc)
 {
     char payload[COMMON_PAYLOAD_LEN];
     int len = sprintf(payload, log_done_fmt, get_physical_time(), proc->id, proc->balance);
-    Message msg = create_message(MESSAGE_MAGIC,payload, (uint16_t)len, DONE);
+    Message msg = create_message(MESSAGE_MAGIC, payload, (uint16_t)len, DONE);
     send(proc, 0, &msg); //send to parent done
     log_event(_DONE, proc->id, 0, proc->balance);
     return 0;
@@ -94,7 +93,7 @@ void main_work(proc_info_t *proc)
     state.s_time = 0;
     state.s_balance_pending_in = 0;
     history.s_history[0] = state;
-//    int i = proc->connection_count;
+    //    int i = proc->connection_count;
     while (1)
     {
         receive_any(proc, &msg);
@@ -125,7 +124,7 @@ void child_work(pid_t id)
 
 void parent_work(pid_t children)
 {
-    proc_info_t* proc = SYSTEM->processes;
+    proc_info_t *proc = SYSTEM->processes;
     Message message;
     for (int i = 1; i < proc->connection_count; i++)
     {
@@ -136,4 +135,3 @@ void parent_work(pid_t children)
     Message msg = create_message(MESSAGE_MAGIC, NULL, 0, STOP);
     send_multicast(SYSTEM->processes, &msg);
 }
-
