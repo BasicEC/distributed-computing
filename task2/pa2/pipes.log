@@ -1,6 +1,0 @@
-pid - 0 open pipe from 0 to 1 fd - 6
-pid - 0 open pipe from 0 to 2 fd - 8
-pid - 0 open pipe from 1 to 0 fd - 10
-pid - 0 open pipe from 1 to 2 fd - 12
-pid - 0 open pipe from 2 to 0 fd - 14
-pid - 0 open pipe from 2 to 1 fd - 16

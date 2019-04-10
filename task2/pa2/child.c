@@ -55,9 +55,9 @@ static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *
     state.s_balance_pending_in = 0;
     history->s_history[new_time] = state;
 
-    for (timestamp_t i = last_time + 1; last_time < new_time; last_time++)
+    for (int i = last_time + 1; last_time < new_time; last_time++)
     {
-        history[i] = history[last_time];
+        history->s_history[i] = history->s_history[last_time];
     }
 
     return new_time;
@@ -126,12 +126,15 @@ void parent_work(pid_t children)
 {
     proc_info_t *proc = SYSTEM->processes;
     Message message;
+
     for (int i = 1; i < proc->connection_count; i++)
     {
         receive(proc, (local_id)i, &message);
     }
     log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
+
     bank_robbery(SYSTEM->processes, (local_id)(SYSTEM->process_count - 1));
+
     Message msg = create_message(MESSAGE_MAGIC, NULL, 0, STOP);
     send_multicast(SYSTEM->processes, &msg);
 }
