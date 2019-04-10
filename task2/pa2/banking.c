@@ -22,7 +22,5 @@ void transfer(void * proc_info, local_id src, local_id dst, balance_t amount) {
 
   memcpy(m.s_payload, &to, sizeof(TransferOrder));
   send(proc_info, src, &m);
-  printf("was sent\n");
   receive(proc_info, dst, &m_received);
-  printf("was received\n");
 }

@@ -29,7 +29,7 @@ static void send_to_all_and_wait_all(proc_info_t *proc)
 //
 //}
 
-static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *history, timestamp_t last_time)
+static void on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *history)
 {
     TransferOrder to;
     memcpy(&to, msg->s_payload, sizeof(TransferOrder));
@@ -51,23 +51,17 @@ static timestamp_t on_transfer(proc_info_t *proc, Message *msg, BalanceHistory *
 
     BalanceState state;
     state.s_balance = proc->balance;
-    state.s_time = 0;
-    state.s_balance_pending_in = 0;
+    state.s_time = new_time;
     history->s_history[new_time] = state;
-
-    for (int i = last_time + 1; last_time < new_time; last_time++)
-    {
-        history->s_history[i] = history->s_history[last_time];
-    }
-
-    return new_time;
+    history->s_history_len++;
 }
 
 static void send_history(proc_info_t *proc, BalanceHistory *history)
 {
     char payload[MAX_PAYLOAD_LEN];
-    int len = sizeof(BalanceHistory);
+    int len = sizeof(BalanceHistory) + sizeof(BalanceState)*history->s_history_len;
     memcpy(&payload, history, (size_t)len);
+    printf("ch:len - %d, pid - %d\n", len, proc->id);
     Message history_msg = create_message(MESSAGE_MAGIC, payload, (uint16_t)len, BALANCE_HISTORY);
     send(proc, 0, &history_msg); //0 - parent id
 }
@@ -87,12 +81,12 @@ void main_work(proc_info_t *proc)
     BalanceHistory history;
     BalanceState state;
     Message msg;
-    timestamp_t last_time = 0;
     history.s_id = proc->id;
     state.s_balance = proc->balance;
     state.s_time = 0;
     state.s_balance_pending_in = 0;
     history.s_history[0] = state;
+    history.s_history_len = 1;
     //    int i = proc->connection_count;
     while (1)
     {
@@ -100,7 +94,7 @@ void main_work(proc_info_t *proc)
         switch (msg.s_header.s_type)
         {
         case TRANSFER:
-            last_time = on_transfer(proc, &msg, &history, last_time);
+            on_transfer(proc, &msg, &history);
             break;
         case STOP:
             send_done(proc);              //send done to parent
@@ -122,6 +116,26 @@ void child_work(pid_t id)
     exit(0);
 }
 
+static AllHistory get_all_history(proc_info_t *proc)
+{
+    AllHistory all_history;
+    Message msg;
+    for (int i = 1; i < proc->connection_count; i++)
+    {
+        receive(proc, i, &msg);
+
+        memcpy(&all_history.s_history[i], msg.s_payload, msg.s_header.s_payload_len);
+
+        printf("len - %d, pid - %d\n", msg.s_header.s_payload_len, i);
+        for (int j = 0; j < all_history.s_history[i].s_history_len; j++)
+        {
+            printf("pid - %d; bal - %d; time - %d\n", i, all_history.s_history[i].s_history[j].s_balance, all_history.s_history[i].s_history[j].s_time);
+        }
+    }
+    all_history.s_history_len = proc->connection_count - 1;
+    return all_history;
+}
+
 void parent_work(pid_t children)
 {
     proc_info_t *proc = SYSTEM->processes;
@@ -137,4 +151,17 @@ void parent_work(pid_t children)
 
     Message msg = create_message(MESSAGE_MAGIC, NULL, 0, STOP);
     send_multicast(SYSTEM->processes, &msg);
+
+    for (int i = 1; i < proc->connection_count; i++)
+    {
+        receive(proc, (local_id)i, &message);
+    }
+
+    AllHistory history = get_all_history(proc);
+
+    print_history(&history);
+
+    while (wait(NULL) > 0)
+    {
+    }
 }
