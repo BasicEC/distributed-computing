@@ -1,11 +1,7 @@
-9665: process 1 (pid   194, parent   193) has STARTED with balance $10
-9666: process 1 received all STARTED messages
-9666: process 0 received all STARTED messages
-9666: process 2 (pid   195, parent   193) has STARTED with balance $20
-9667: process 1 transferred $ 1 to process 2
-9667: process 2 received all STARTED messages
-9668: process 2 received $ 1 from process 1
-9668: process 2 transferred $ 1 to process 1
-9668: process 1 received $ 1 from process 2
-9668: process 2 has DONE with balance $20
-9668: process 1 has DONE with balance $10
+276: process 0 received all STARTED messages
+277: process 1 (pid   880, parent   879) has STARTED with balance $10
+278: process 2 (pid   881, parent   879) has STARTED with balance $20
+278: process 1 received all STARTED messages
+279: process 2 received all STARTED messages
+281: process 1 transferred $ 1 to process 2
+282: process 2 received $ 1 from process 1

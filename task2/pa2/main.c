@@ -14,9 +14,6 @@
 
 int PROCESS_COUNT;
 
-
-
-
 pid_t create_process(System_t *sys, local_id index)
 {
     pid_t id = fork();

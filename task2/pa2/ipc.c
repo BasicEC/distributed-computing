@@ -115,7 +115,7 @@ int receive_any(void *self, Message *msg)
 
     while (1)
     {
-        for (int i = selft->connection_count; i >= 0; --i)
+        for (int i = selft->connection_count - 1; i >= 0; --i)
         {
             if (i == selft->id)
                 continue;
