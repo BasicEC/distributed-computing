@@ -6,6 +6,12 @@
 #include "ipc.h"
 #include "sys/time.h"
 
+//timestamp_t get_physical_time(){
+//  return 1;
+//}
+
+//void print_history(const AllHistory * history){}
+
 void transfer(void * proc_info, local_id src, local_id dst, balance_t amount) {
   
   TransferOrder to;
