@@ -64,7 +64,7 @@ static void send_history(proc_info_t *proc, BalanceHistory *history)
     BalanceHistory history1;
     Message history_msg = create_message(MESSAGE_MAGIC, payload, (uint16_t)len, BALANCE_HISTORY);
     memcpy(&history1, history_msg.s_payload, (size_t)len);
-    printf("pid - %d : %d %d %d %d %d %d %d %d\n", proc->id, payload[0],payload[1],payload[2],payload[3],payload[4],payload[5],payload[6], payload[7]);
+//    printf("pid - %d : %d %d %d %d %d %d %d %d\n", proc->id, payload[0],payload[1],payload[2],payload[3],payload[4],payload[5],payload[6], payload[7]);
 //    printf("pid - %d, msg - %s in\n", proc->id,payload);
 //    printf("pid - %d, time - %d, balance - %d kek01\n", proc->id, history1.s_history[1].s_time, history1.s_history[1].s_balance);
 //    printf("pid - %d, header_time - %d, type - %d, len - %d kek01\n",proc->id, history_msg.s_header.s_local_time, history_msg.s_header.s_type, history_msg.s_header.s_payload_len);
@@ -133,7 +133,7 @@ static AllHistory get_all_history(proc_info_t *proc)
         memcpy(&all_history.s_history[i], &msg.s_payload, msg.s_header.s_payload_len);
         memcpy(&history, msg.s_payload, msg.s_header.s_payload_len);
 
-        printf("pid - %d : %d %d %d %d %d %d %d %d out\n", i, msg.s_payload[0],msg.s_payload[1],msg.s_payload[2],msg.s_payload[3],msg.s_payload[4],msg.s_payload[5],msg.s_payload[6], msg.s_payload[7]);
+//        printf("pid - %d : %d %d %d %d %d %d %d %d out\n", i, msg.s_payload[0],msg.s_payload[1],msg.s_payload[2],msg.s_payload[3],msg.s_payload[4],msg.s_payload[5],msg.s_payload[6], msg.s_payload[7]);
 //        printf("pid - %d, msg - %s out\n", i, msg.s_payload);
 //        printf("len - %d, type - %d, pid - %d\n", msg.s_header.s_payload_len, msg.s_header.s_type, i);
 //        printf("pid - %d, header_time - %d, type - %d, len - %d kek001\n",i, msg.s_header.s_local_time, msg.s_header.s_type, msg.s_header.s_payload_len);
@@ -155,6 +155,7 @@ void parent_work(pid_t children)
     {
         receive(proc, (local_id)i, &message);
     }
+
     log_event(_RECEIVED_ALL_STARTED, proc->id, 0, proc->balance);
 
     bank_robbery(SYSTEM->processes, (local_id)(SYSTEM->process_count - 1));
