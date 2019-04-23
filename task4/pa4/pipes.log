@@ -1,0 +1,12 @@
+pid - 0 open pipe from 0 to 1 fd - 6
+pid - 0 open pipe from 0 to 2 fd - 8
+pid - 0 open pipe from 0 to 3 fd - 10
+pid - 0 open pipe from 1 to 0 fd - 12
+pid - 0 open pipe from 1 to 2 fd - 14
+pid - 0 open pipe from 1 to 3 fd - 16
+pid - 0 open pipe from 2 to 0 fd - 18
+pid - 0 open pipe from 2 to 1 fd - 20
+pid - 0 open pipe from 2 to 3 fd - 22
+pid - 0 open pipe from 3 to 0 fd - 24
+pid - 0 open pipe from 3 to 1 fd - 26
+pid - 0 open pipe from 3 to 2 fd - 28

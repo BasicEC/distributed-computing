@@ -1,137 +1,134 @@
-#include "ipc2.h"
-#include "banking.h"
-#include <fcntl.h>
+#include "ipc.h"
+#include "self.h"
+#include <unistd.h>
+#include "string.h"
+#include <stddef.h>
 #include <stdio.h>
-#include <string.h>
+#include <fcntl.h>
+#include "common.h"
+#include "logs.h"
 
-int send(void *self, local_id dst, const Message *msg) {
-    proc_info *info = (proc_info *) self;
-    if (info->self == dst) {
+
+static int send_msg(int fd, const Message *msg)
+{
+    if (fd == 0 || msg == NULL)
         return -1;
-    }
-    write(info->connections.fds[info->self][dst][1], msg, sizeof msg->s_header + msg->s_header.s_payload_len);
-    return 0;
+
+    ssize_t result = write(fd, msg, sizeof(MessageHeader) + msg->s_header.s_payload_len);
+
+    return (int)result;
 }
 
-int send_multicast(void *self, const Message *msg) {
-    proc_info *info = (proc_info *) self;
-    for (int i = 0; i <= info->connections.procCount; ++i) {
-        if (i != info->self)
-            send(self, i, msg);
-    }
-    return 0;
-}
 
-int receive(void *self, local_id from, Message *msg) {
-    proc_info *info = (proc_info *) self;
-    int fd = info->connections.fds[from][info->self][0];
-    while (1) {
-        int sum, sum1;
-        if ((sum = read(fd, &msg->s_header, sizeof(MessageHeader))) == -1) {
-            usleep(1000);
-            continue;
-        }
-        if (msg->s_header.s_payload_len > 0) {
-            sum1 = read(fd, msg->s_payload, msg->s_header.s_payload_len);
-        }
+static int can_read(int fd)
+{
+    long cur = lseek(fd, 0, SEEK_CUR);
+    long end = lseek(fd, 0, SEEK_END);
+
+    if (end > cur)
+    {
+        lseek(fd, cur, SEEK_SET);
         return 0;
     }
+    return 1;
 }
 
-int receive_any(void *self, Message *msg) {
-    proc_info *info = (proc_info *) self;
-    while (1) {
-        for (int i = 0; i <= info->connections.procCount; ++i) {
-            if (i == info->self) continue;
+static int read_msg(int fd, Message *msg)
+{
+    if (fd == 0 || msg == NULL)
+        return -1;
 
-            int fd = info->connections.fds[i][info->self][0];
-            int sum, sum1;
-            int flags = fcntl(fd, F_GETFL, 0);
-            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-            sum = read(fd, &msg->s_header, sizeof(MessageHeader));
-            if (sum == -1) {
-                continue;
-            }
-            if (msg->s_header.s_payload_len > 0) {
-                sum1 = read(fd, msg->s_payload, msg->s_header.s_payload_len);
-            }
-            fflush(stdout);
-            return 0;
-        }
-        usleep(500);
-    }
+    ssize_t result0;
+    ssize_t result1;
+    MessageHeader mh;
+
+    result0 = read(fd, &mh, sizeof(MessageHeader));
+    if (result0 < 0)
+        return (int)result0;
+
+    msg->s_header = mh;
+
+    char buf[mh.s_payload_len];
+    result1 = read(fd, buf, mh.s_payload_len);
+    if (result1 < 0)
+        return (int)result1;
+    strcpy(msg->s_payload, buf);
+
+    return (int)(result0 + result1);
 }
 
-//static void close_connection(int i, int j, proc_info* info, int proc_id){
-//    if (proc_id == i) {
-//        close(info->connections.fds[i][j][0]);
-//    } else if (proc_id == j) {
-//        close(info->connections.fds[i][j][1]);
-//    } else {
-//        close(info->connections.fds[i][j][0]);
-//        close(info->connections.fds[i][j][1]);
-//    }
-//}
-//
-//void close_connections(void *self, int proc_id) {
-//    proc_info *info = (proc_info *) self;
-//    for (int i = 0; i <= info->connections.procCount; ++i) {
-//        for (int j = 0; j <= info->connections.procCount; ++j) {
-//            if (i == j) continue;
-//            close_connection(i,j,info, proc_id);
-//        }
-//    }
-//}
+int send(void *self, local_id dst, const Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t w_result = 0;
+    int pipefd = get_w_pipefd_by_id((proc_info_t *)selft, dst);
 
-void close_connections(void *self, int proc) {
-    proc_info *sio = (proc_info *) self;
-    for (int i = 0; i <= sio->connections.procCount; ++i) {
-        for (int j = 0; j <= sio->connections.procCount; ++j) {
-            if (i == j) continue;
-            if (proc == i) {
-                close(sio->connections.fds[i][j][0]);
-            } else if (proc == j) {
-                close(sio->connections.fds[i][j][1]);
-            } else {
-                close(sio->connections.fds[i][j][0]);
-                close(sio->connections.fds[i][j][1]);
-            }
-        }
-    }
+    if (pipefd < 0)
+        return pipefd;
+
+    w_result = send_msg(pipefd, msg);
+
+    if (w_result < 0)
+        return w_result;
+    //log
+    return 0;
 }
 
-int receive_all(void *self, Message msgs[], MessageType type) {
-   proc_info *info = (proc_info *) self;
-    for (int i = 1; i <= info->connections.procCount; ++i) {
-        if (i == info->self) continue;
-        do {
-            receive(self, i, &msgs[i]);
-        } while (msgs[i].s_header.s_type != type);
+int send_multicast(void *self, const Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t w_result = 0;
+
+    for (int i = 0; i < selft->connection_count; ++i)
+    {
+        if (i == selft->id)
+            continue;
+        w_result = send_msg(selft->connections[i].write, msg);
+        //log
+        if (w_result < 0)
+            return w_result;
     }
 
     return 0;
 }
 
-void createMessageHeader(Message *msg, MessageType messageType) {
-    msg->s_header.s_magic = MESSAGE_MAGIC;
-    msg->s_header.s_type = messageType;
-    msg->s_header.s_local_time = get_physical_time();
-    msg->s_header.s_payload_len = strlen(msg->s_payload) + 1;
+int receive(void *self, local_id dst, Message *msg)
+{
+    ssize_t r_result = 0;
+    int pipefd = get_r_pipefd_by_id((proc_info_t *)self, dst);
+
+    while (r_result <= 0)
+    {
+        r_result = read_msg(pipefd, msg);
+    }
+
+    if (r_result < 0)
+        return r_result;
+    //log
+    return 0;
 }
 
-void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
-    Message msg;
-    TransferOrder order = {src, dst, amount};
-    memcpy(msg.s_payload, &order, sizeof(order));
-    createMessageHeader(&msg, TRANSFER);
-    msg.s_header.s_payload_len = sizeof(order);
-    send(parent_data, src, &msg);
+int receive_any(void *self, Message *msg)
+{
+    proc_info_t *selft = (proc_info_t *)self;
+    ssize_t r_result = 0;
 
-    Message result_msg;
-    result_msg.s_header.s_type = DONE;
-    while (result_msg.s_header.s_type != ACK)
-        receive(parent_data, dst, &result_msg);
-    printf("%d$ transfered from %d to %d\n",amount, src, dst);
-    fflush(stdout);
-    usleep(1000);
+    while (1)
+    {
+        for (int i = selft->connection_count - 1; i >= 0; --i)
+        {
+            if (i == selft->id)
+                continue;
+            if (can_read(selft->connections[i].read))
+            {
+                r_result = read_msg(selft->connections[i].read, msg);
+                if (r_result <= 0)
+                    continue;
+                if (!r_result)
+                    continue;
+                //log
+                return 0;
+            }
+        }
+    }
 }
