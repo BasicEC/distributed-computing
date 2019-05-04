@@ -1,16 +1,12 @@
 #ifndef _CONNECTIONS
 #define _CONNECTIONS
 
-#include "util.h"
 
-typedef struct {
-	int read;
-	int write;
-} connection_t;
+#include "util.h"
 
 void initPipeLines(table_t*);
 int getOpenedPipesFDCount();
-void closeUnusedPipes(int selfId);
+void closeUnusedPipes(int selfId, table_t* table);
 void freePipeLines();
 void closePipe(int fd);
 

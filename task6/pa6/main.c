@@ -21,19 +21,19 @@ int system_done(pid_t pid, int selfId) {
 	Message msg;
 	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId, 0);
 
-	msg.s_header.s_local_time = get_time();
-	msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
-	msg.s_header.s_type = DONE;
-
-	DataInfo info;
-	info.senderId = selfId;
-	send_multicast(&info, &msg);
-	for (int id = 0; id < get_childCount() + 1; id++) {
-		if (id != PARENT_ID && id != selfId) {
-			receive(&info, id, &msg);
-		}
-	}
+//	msg.s_header.s_local_time = get_time();
+//	msg.s_header.s_magic = MESSAGE_MAGIC;
+//	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
+//	msg.s_header.s_type = DONE;
+//
+//	DataInfo info;
+//	info.senderId = selfId;
+//	send_multicast(&info, &msg);
+//	for (int id = 0; id < get_childCount() + 1; id++) {
+//		if (id != PARENT_ID && id != selfId) {
+//			receive(&info, id, &msg);
+//		}
+//	}
 
 	// sync ended
 	fprintf(pLogFile, log_received_all_done_fmt, get_time(), selfId);
@@ -43,8 +43,8 @@ int system_done(pid_t pid, int selfId) {
 }
 
 int system_work(pid_t pid, int selfId) {
-	// some work
-	// char isWorked = 1;
+
+
 
 	// work is done
 	fprintf(pLogFile, log_done_fmt, get_time(), selfId, 0);
@@ -55,12 +55,8 @@ int system_work(pid_t pid, int selfId) {
 int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
 	register_event();
-	// sync
-	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid, 0);
-	fflush(pLogFile);
 
-	// sync complete
-	fprintf(pLogFile, log_received_all_started_fmt, get_time(), selfId);
+	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid, 0);
 	fflush(pLogFile);
 
 	return system_work(pid, selfId);
@@ -93,8 +89,7 @@ int main(int argc, char **argv) {
 	for (int id = 0; id < childCount; id++) {
 		childPid = fork();
 		if (childPid > 0) {
-
-//			closeUnusedPipes(id);
+			closeUnusedPipes(id, table);
 			system_started(getpid(), id);
 			break;
 
@@ -103,20 +98,6 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (childPid != 0) {
-		closeUnusedPipes(PARENT_ID);
-
-		DataInfo info;
-		Message msg;
-		info.senderId = PARENT_ID;
-
-		for (int idx = 1; idx <= childCount; idx++) {
-			receive(&info, idx, &msg);
-		}
-
-		for (int idx = 1; idx < childCount + 1; idx++) {
-			receive(&info, idx, &msg);
-		}
-
 		int status;
 		while (wait(&status) > 0);
 	}

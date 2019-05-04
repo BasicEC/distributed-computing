@@ -13,8 +13,9 @@ void sync_time(timestamp_t time) {
 }
 
 int getPipeId(int from, int to) {
-	if (to > from) to--;
-	return from * get_pipeline_width() + to;
+//	if (to > from) to--;
+//	return from * get_pipeline_width() + to;
+ 	return 0;
 }
 
 int writePipe(int fd, const Message* msg) {
@@ -57,57 +58,59 @@ int readPipe(int fd, Message* msg, char isWait) {
 }
 
 int send(void * self, local_id dst, const Message * msg) {
-	DataInfo* info = (DataInfo*)self;
-    connection_t* pPipeLines = get_pPipeLines();
-	int pipeId = pPipeLines[getPipeId(info->senderId, dst)].write;
-	return writePipe(pipeId, msg);
+//	DataInfo* info = (DataInfo*)self;
+//    connection_t* pPipeLines = get_pPipeLines();
+//	int pipeId = pPipeLines[getPipeId(info->senderId, dst)].write;
+//	return writePipe(pipeId, msg);
+	return 0;
 }
 
 
 int send_multicast(void * self, const Message * msg) {
-	DataInfo* info = (DataInfo*)self;
-    connection_t* pPipeLines = get_pPipeLines();
-	for (int id = 0; id < get_childCount() + 1; id++) {
-		if (id != info->senderId) {
-			int pipeId = pPipeLines[getPipeId(info->senderId, id)].write;
-			if (writePipe(pipeId, msg) < 0)
-				return -1;
-		}
-	}
+//	DataInfo* info = (DataInfo*)self;
+//    connection_t* pPipeLines = get_pPipeLines();
+//	for (int id = 0; id < get_childCount() + 1; id++) {
+//		if (id != info->senderId) {
+//			int pipeId = pPipeLines[getPipeId(info->senderId, id)].write;
+//			if (writePipe(pipeId, msg) < 0)
+//				return -1;
+//		}
+//	}
 
 	return 0;
 }
 
 int receive(void * self, local_id from, Message * msg) {
-	DataInfo* info = (DataInfo*)self;
-    connection_t* pPipeLines = get_pPipeLines();
-	int pipeId = pPipeLines[getPipeId(from, info->senderId)].read;
-	int result = readPipe(pipeId, msg, 1);
+//	DataInfo* info = (DataInfo*)self;
+//    connection_t* pPipeLines = get_pPipeLines();
+//	int pipeId = pPipeLines[getPipeId(from, info->senderId)].read;
+//	int result = readPipe(pipeId, msg, 1);
+//
+//	if (result >= 0) {
+//		sync_time(msg->s_header.s_local_time);
+//	}
 
-	if (result >= 0) {
-		sync_time(msg->s_header.s_local_time);
-	}
-
-	return result;
+//	return result;
+    return 0;
 }
 
 
 int receive_any(void * self, Message * msg) {
-	DataInfo* info = (DataInfo*)self;
-    connection_t* pPipeLines = get_pPipeLines();
-	for (int id = 0; id <= get_childCount(); id++) {
-		if (id != info->senderId) {
-			int pipeId = pPipeLines[getPipeId(id, info->senderId)].read;
+//	DataInfo* info = (DataInfo*)self;
+//    connection_t* pPipeLines = get_pPipeLines();
+//	for (int id = 0; id <= get_childCount(); id++) {
+//		if (id != info->senderId) {
+//			int pipeId = pPipeLines[getPipeId(id, info->senderId)].read;
+//
+//			if (readPipe(pipeId, msg, 0) == 0) {
+//				info->receiveId = id;
+//				sync_time(msg->s_header.s_local_time);
+//
+//				return 0;
+//			}
+//		}
+//		//sleep(1);
+//	}
 
-			if (readPipe(pipeId, msg, 0) == 0) {
-				info->receiveId = id;
-				sync_time(msg->s_header.s_local_time);
-
-				return 0;
-			}
-		}
-		//sleep(1);
-	}
-
-	return -1;
+    return -1;
 }

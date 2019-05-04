@@ -33,12 +33,29 @@ void initPipeLines(table_t* table) {
 	}
 }
 
-int getOpenedPipesFDCount() {
-}
-
-void closeUnusedPipes(int selfId) {
-
-	fprintf(get_pipefile(), "Opened for %d PipesFD == %d\n", selfId, getOpenedPipesFDCount());
+void closeUnusedPipes(int selfId, table_t* table) {
+	int left = selfId + 1 == table->thinkers_count ? 0 : selfId + 1;
+	int right = selfId - 1 == -1 ? table->thinkers_count - 1 : selfId - 1;
+	for (int i = 0; i < table->thinkers_count; i++){
+		if(i == selfId)
+			continue;
+		if (i == right){
+			closePipe(table->thinkers[right].right_neighor->write);
+			closePipe(table->thinkers[right].right_neighor->read);
+			closePipe(table->thinkers[right].left_neighbor->write);
+			continue;
+		}
+		if(i == left){
+			closePipe(table->thinkers[left].left_neighbor->write);
+			closePipe(table->thinkers[left].left_neighbor->read);
+			closePipe(table->thinkers[left].right_neighor->write);
+			continue;
+		}
+		closePipe(table->thinkers[i].left_neighbor->write);
+		closePipe(table->thinkers[i].left_neighbor->read);
+		closePipe(table->thinkers[i].right_neighor->write);
+		closePipe(table->thinkers[i].right_neighor->read);
+	}
 }
 
 
