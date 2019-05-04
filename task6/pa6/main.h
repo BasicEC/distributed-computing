@@ -16,6 +16,7 @@
 #include "ipc.h"
 #include "pa23.h"
 #include "common.h"
+#include "connections.h"
 
 typedef struct {
 	int senderId;
@@ -26,6 +27,8 @@ typedef struct{
 	int count;
 	int mutex;
 } arguments_t;
+
+
 
 #define E_PIPE_INVALID_ARGUMENT -1
 #define E_PIPE_NO_DATA -2

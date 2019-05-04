@@ -1,18 +1,18 @@
 #ifndef _CONNECTIONS
 #define _CONNECTIONS
 
-typedef struct {
-	int input;
-	int output;
-} PipeLineInfo;
+#include "util.h"
 
-void initPipeLines(int processCount);
+typedef struct {
+	int read;
+	int write;
+} connection_t;
+
+void initPipeLines(table_t*);
 int getOpenedPipesFDCount();
 void closeUnusedPipes(int selfId);
 void freePipeLines();
 void closePipe(int fd);
-int get_pipeline_width();
-PipeLineInfo*  get_pPipeLines();
 
 
 #endif
