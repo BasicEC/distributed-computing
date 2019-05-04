@@ -22,7 +22,10 @@ typedef struct {
 	int receiveId;
 } DataInfo;
 
-
+typedef struct{
+	int count;
+	int mutex;
+} arguments_t;
 
 #define E_PIPE_INVALID_ARGUMENT -1
 #define E_PIPE_NO_DATA -2
