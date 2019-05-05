@@ -12,12 +12,6 @@ void sync_time(timestamp_t time) {
 	set_local_time(localTime);
 }
 
-int getPipeId(int from, int to) {
-//	if (to > from) to--;
-//	return from * get_pipeline_width() + to;
- 	return 0;
-}
-
 int writePipe(int fd, const Message* msg) {
 	if (fd == 0 || msg == NULL)
 		return E_PIPE_INVALID_ARGUMENT;
@@ -65,25 +59,22 @@ int send(void * self, local_id dst, const Message * msg) {
 	return 0;
 }
 
-int send_to_neighbors(thinker_t* source, Message* msg){
-    return 0;
-}
-
 int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
+    switch(dir){
+        case DIRECTION_BOTH: {
+            if (writePipe(source->left_neighbor->write, msg) < 0)
+                return -1;
+            return writePipe(source->right_neighbor->write, msg);
+        }
+        case DIRECTION_LEFT:
+            return writePipe(source->left_neighbor->write, msg);
+        case DIRECTION_RIGHT:
+            return writePipe(source->right_neighbor->write, msg);
+    }
     return 0;
 }
 
 int send_multicast(void * self, const Message * msg) {
-//	DataInfo* info = (DataInfo*)self;
-//    connection_t* pPipeLines = get_pPipeLines();
-//	for (int id = 0; id < get_childCount() + 1; id++) {
-//		if (id != info->senderId) {
-//			int pipeId = pPipeLines[getPipeId(info->senderId, id)].write;
-//			if (writePipe(pipeId, msg) < 0)
-//				return -1;
-//		}
-//	}
-
 	return 0;
 }
 

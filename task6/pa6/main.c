@@ -63,8 +63,8 @@ int system_started(pid_t pid, int selfId) {
 	msg.s_header.s_magic = MESSAGE_MAGIC;
 	msg.s_header.s_payload_len = (uint16_t)(strlen(msg.s_payload) + 1);
 	msg.s_header.s_type = STARTED;
+	send_to_neighbor(thinker, DIRECTION_BOTH, &msg);
 
-	send
 
 	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid);
 	fflush(pLogFile);

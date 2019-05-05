@@ -12,13 +12,13 @@ typedef struct {
 
 typedef struct{
 	connection_t* left_neighbor;
-	connection_t* right_neighor;
+	connection_t* right_neighbor;
 } thinker_t;
 
 typedef enum{
-  LEFT,
-  RIGHT,
-  BOTH
+  DIRECTION_LEFT,
+  DIRECTION_RIGHT,
+  DIRECTION_BOTH
 } direction;
 
 

@@ -11,7 +11,7 @@
 
 void allocate_connections(table_t* table){
 	for (int i = 0 ; i < table->thinkers_count; i++){
-		table->thinkers[i].right_neighor = malloc(sizeof(connection_t));
+		table->thinkers[i].right_neighbor = malloc(sizeof(connection_t));
 		table->thinkers[i].left_neighbor = malloc(sizeof(connection_t));
 	}
 }
@@ -25,11 +25,11 @@ void initPipeLines(table_t* table) {
 		thinker_t destination_right = table->thinkers[i-1 == -1 ? table->thinkers_count - 1 : i-1];
 		int pipe_ids[2];
 		pipe2(pipe_ids, O_NONBLOCK);
-		source.right_neighor->write = pipe_ids[0];
+		source.right_neighbor->write = pipe_ids[0];
 		destination_right.left_neighbor->read = pipe_ids[1];
 		pipe2(pipe_ids, O_NONBLOCK);
 		source.left_neighbor->write = pipe_ids[0];
-		destination_left.right_neighor->read = pipe_ids[1];
+		destination_left.right_neighbor->read = pipe_ids[1];
 	}
 }
 
@@ -40,21 +40,21 @@ void closeUnusedPipes(int selfId, table_t* table) {
 		if(i == selfId)
 			continue;
 		if (i == right){
-			closePipe(table->thinkers[right].right_neighor->write);
-			closePipe(table->thinkers[right].right_neighor->read);
+			closePipe(table->thinkers[right].right_neighbor->write);
+			closePipe(table->thinkers[right].right_neighbor->read);
 			closePipe(table->thinkers[right].left_neighbor->write);
 			continue;
 		}
 		if(i == left){
 			closePipe(table->thinkers[left].left_neighbor->write);
 			closePipe(table->thinkers[left].left_neighbor->read);
-			closePipe(table->thinkers[left].right_neighor->write);
+			closePipe(table->thinkers[left].right_neighbor->write);
 			continue;
 		}
 		closePipe(table->thinkers[i].left_neighbor->write);
 		closePipe(table->thinkers[i].left_neighbor->read);
-		closePipe(table->thinkers[i].right_neighor->write);
-		closePipe(table->thinkers[i].right_neighor->read);
+		closePipe(table->thinkers[i].right_neighbor->write);
+		closePipe(table->thinkers[i].right_neighbor->read);
 	}
 }
 
