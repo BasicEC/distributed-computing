@@ -65,6 +65,8 @@ int system_started(pid_t pid, int selfId) {
 	msg.s_header.s_type = STARTED;
 	send_to_neighbor(thinker, DIRECTION_BOTH, &msg);
 
+	receive_from_neighbor(thinker, DIRECTION_RIGHT, &msg);
+	receive_from_neighbor(thinker, DIRECTION_LEFT, &msg);
 
 	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid);
 	fflush(pLogFile);

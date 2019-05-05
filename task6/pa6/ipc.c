@@ -74,6 +74,32 @@ int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
     return 0;
 }
 
+int receive_from_neighbor(thinker_t* source, direction dir, Message* msg){
+    int result = 0;
+    switch (dir){
+        case DIRECTION_BOTH:{
+            while(1){
+                result = readPipe(source->right_neighbor->read, msg, 0);
+                if (result >=0)
+                    break;
+                result = readPipe(source->left_neighbor->read, msg, 0);
+                if (result >=0)
+                    break;
+            }
+            break;
+        }
+        case DIRECTION_RIGHT:{
+            result = readPipe(source->right_neighbor->read, msg, 1);
+            break;
+        }
+        case DIRECTION_LEFT:{
+            result = readPipe(source->left_neighbor->read, msg, 1);
+            break;
+        }
+    }
+    return result;
+}
+
 int send_multicast(void * self, const Message * msg) {
 	return 0;
 }

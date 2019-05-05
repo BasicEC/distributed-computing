@@ -10,5 +10,6 @@ void closeUnusedPipes(int selfId, table_t* table);
 void freePipeLines();
 void closePipe(int fd);
 int send_to_neighbor(thinker_t*, direction, Message*);
+int receive_from_neighbor(thinker_t*, direction, Message*);
 
 #endif
