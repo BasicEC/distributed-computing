@@ -39,8 +39,33 @@ int system_done(pid_t pid, int selfId) {
 	return 0;
 }
 
-void eat(){
+int ask_for_fork(direction dir,pid_t pid, int selfId){
+	Message msg;
+	sprintf(msg.s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
+	msg.s_header.s_local_time = get_time();
+	msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
+	msg.s_header.s_type = ACK;
+	int result = send_to_neighbor(thinker, dir, &msg);
+	if (result < 0) return -1;
+	receive_from_neighbor(thinker, dir, &msg);
+}
 
+void eat(pid_t pid, int selfId){
+	if (!thinker->left_fork->enabled) {
+		ask_for_fork(DIRECTION_LEFT, pid, selfId);
+		thinker->left_fork->enabled = 1;
+		thinker->left_fork->dirty = 0;
+	}
+	if (!thinker->right_fork->enabled) {
+		ask_for_fork(DIRECTION_RIGHT, pid, selfId);
+		thinker->right_fork->dirty = 0;
+		thinker->right_fork->enabled = 1;
+	}
+	//EAT
+
+	thinker->right_fork->dirty = 1;
+	thinker->left_fork->dirty = 1;
 }
 
 time_t get_end_time(){
@@ -100,7 +125,7 @@ int thinker_work(pid_t pid, int selfId) {
 
 	for (int i = 0; i < 5; i++){
 		think(pid, selfId);
-		eat();
+		eat(pid, selfId);
 	}
 	// work is done
 	fprintf(pLogFile, log_done_fmt, get_time(), selfId);
