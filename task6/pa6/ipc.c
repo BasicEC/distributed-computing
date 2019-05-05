@@ -65,6 +65,13 @@ int send(void * self, local_id dst, const Message * msg) {
 	return 0;
 }
 
+int send_to_neighbors(thinker_t* source, Message* msg){
+    return 0;
+}
+
+int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
+    return 0;
+}
 
 int send_multicast(void * self, const Message * msg) {
 //	DataInfo* info = (DataInfo*)self;

@@ -3,6 +3,7 @@
 #include "main.h"
 #include "connections.h"
 #include "util.h"
+#include "pa6.h"
 #include <getopt.h>
 
 pid_t parentPid;
@@ -19,7 +20,7 @@ int system_done(pid_t pid, int selfId) {
 	register_event();
 	// sync
 	Message msg;
-	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId, 0);
+	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId);
 
 //	msg.s_header.s_local_time = get_time();
 //	msg.s_header.s_magic = MESSAGE_MAGIC;
@@ -47,7 +48,7 @@ int system_work(pid_t pid, int selfId) {
 
 
 	// work is done
-	fprintf(pLogFile, log_done_fmt, get_time(), selfId, 0);
+	fprintf(pLogFile, log_done_fmt, get_time(), selfId);
 	fflush(pLogFile);
 	return system_done(pid, selfId);
 }
@@ -56,7 +57,16 @@ int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
 	register_event();
 
-	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid, 0);
+	Message msg;
+	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
+	msg.s_header.s_local_time = get_time();
+	msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.s_header.s_payload_len = (uint16_t)(strlen(msg.s_payload) + 1);
+	msg.s_header.s_type = STARTED;
+
+	send
+
+	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid);
 	fflush(pLogFile);
 
 	return system_work(pid, selfId);

@@ -15,6 +15,12 @@ typedef struct{
 	connection_t* right_neighor;
 } thinker_t;
 
+typedef enum{
+  LEFT,
+  RIGHT,
+  BOTH
+} direction;
+
 
 typedef struct{
 	int thinkers_count;
