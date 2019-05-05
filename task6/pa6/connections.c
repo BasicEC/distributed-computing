@@ -11,8 +11,8 @@
 
 void allocate_connections(table_t* table){
 	for (int i = 0 ; i < table->thinkers_count; i++){
-		table->thinkers[0].right_neighor = malloc(sizeof(connection_t));
-		table->thinkers[1].right_neighor = malloc(sizeof(connection_t));
+		table->thinkers[i].right_neighor = malloc(sizeof(connection_t));
+		table->thinkers[i].left_neighbor = malloc(sizeof(connection_t));
 	}
 }
 

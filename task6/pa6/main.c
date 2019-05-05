@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
 	for (int id = 0; id < childCount; id++) {
 		childPid = fork();
 		if (childPid > 0) {
+
 			closeUnusedPipes(id, table);
 			system_started(getpid(), id);
 			break;
