@@ -5,6 +5,7 @@
 #include <bits/types/FILE.h>
 #include "ipc.h"
 
+
 typedef struct {
 	int dirty;
 	int enabled;
@@ -28,6 +29,10 @@ typedef enum{
   DIRECTION_BOTH
 } direction;
 
+typedef struct{
+	Message msg;
+	direction dir;
+} message_info_t;
 
 typedef struct{
 	int thinkers_count;

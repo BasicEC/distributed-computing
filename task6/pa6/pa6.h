@@ -23,5 +23,10 @@ static const char * const log_done_fmt =
 static const char * const log_received_all_done_fmt =
         "%d: process %1d received all DONE messages\n";
 
+static const char * const log_request_for_fork_fmt =
+        "%d: process %1d ask for fork from process %d\n";
+
+static const char * const log_responce_with_fork_fmt =
+        "%d: process %1d give fork to process %d\n";
 
 #endif //TASK6_PA6_H

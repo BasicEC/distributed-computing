@@ -52,16 +52,54 @@ time_t get_end_time(){
 	return start_time + delay;
 }
 
+Message* prepare_transfer_message(pid_t pid, int selfId){
+	Message* msg = malloc(sizeof(Message));
+	sprintf(msg->s_payload, log_responce_with_fork_fmt, get_time(), selfId, pid);
+	msg->s_header.s_local_time = get_time();
+	msg->s_header.s_magic = MESSAGE_MAGIC;
+	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
+	msg->s_header.s_type = TRANSFER;
+	return msg;
+}
 
-void think(){
+int process_request(message_info_t* info, pid_t pid, int selfId){
+	switch (info->dir){
+		case DIRECTION_BOTH:
+			return -1;
+		case DIRECTION_LEFT:{
+			if (!thinker->left_fork->enabled)
+				return -1;
+			thinker->left_fork->enabled = 0;
+			thinker->left_fork->dirty = 0;
+			Message* msg = prepare_transfer_message(pid, selfId);
+			send_to_neighbor(thinker, DIRECTION_LEFT, msg);
+		}
+		case DIRECTION_RIGHT:{
+			if (!thinker->right_fork->enabled)
+				return -1;
+			thinker->right_fork->enabled = 0;
+			thinker->right_fork->dirty = 0;
+			Message* msg = prepare_transfer_message(pid, selfId);
+			send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
+		}
+	}
+	return 0;
+}
+
+void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
-	while (clock() < end_time);
+	message_info_t msg;
+	while (clock() < end_time){
+		if (!try_receive_message(thinker, DIRECTION_BOTH, &msg))
+			continue;
+		process_request(&msg, pid, selfId);
+	}
 }
 
 int thinker_work(pid_t pid, int selfId) {
 
 	for (int i = 0; i < 5; i++){
-		think();
+		think(pid, selfId);
 		eat();
 	}
 	// work is done
