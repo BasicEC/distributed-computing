@@ -25,11 +25,11 @@ void initPipeLines(table_t* table) {
 		thinker_t destination_right = table->thinkers[i-1 == -1 ? table->thinkers_count - 1 : i-1];
 		int pipe_ids[2];
 		pipe2(pipe_ids, O_NONBLOCK);
-		source.right_neighbor->write = pipe_ids[0];
-		destination_right.left_neighbor->read = pipe_ids[1];
+		source.right_neighbor->read = pipe_ids[0];
+		destination_right.left_neighbor->write = pipe_ids[1];
 		pipe2(pipe_ids, O_NONBLOCK);
-		source.left_neighbor->write = pipe_ids[0];
-		destination_left.right_neighbor->read = pipe_ids[1];
+		source.left_neighbor->read = pipe_ids[0];
+		destination_left.right_neighbor->write = pipe_ids[1];
 	}
 }
 

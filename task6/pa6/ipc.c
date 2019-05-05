@@ -16,11 +16,14 @@ int writePipe(int fd, const Message* msg) {
 	if (fd == 0 || msg == NULL)
 		return E_PIPE_INVALID_ARGUMENT;
 
-	write(fd, &msg->s_header, sizeof(MessageHeader));
+	ssize_t result =  write(fd, &msg->s_header, sizeof(MessageHeader));
+	if(result < 0)
+        return -1;
 	if (msg->s_header.s_payload_len > 0) {
-		write(fd, msg->s_payload, msg->s_header.s_payload_len);
-	}
-
+        result = write(fd, msg->s_payload, msg->s_header.s_payload_len);
+        if (result < 0)
+            return -1;
+    }
 	return 0;
 }
 

@@ -6,6 +6,11 @@
 #include "ipc.h"
 
 typedef struct {
+	int dirty;
+	int enabled;
+} fork_t;
+
+typedef struct {
 	int read;
 	int write;
 } connection_t;
@@ -13,6 +18,8 @@ typedef struct {
 typedef struct{
 	connection_t* left_neighbor;
 	connection_t* right_neighbor;
+	fork_t* left_fork;
+	fork_t* right_fork;
 } thinker_t;
 
 typedef enum{
