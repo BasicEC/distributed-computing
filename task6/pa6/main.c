@@ -5,7 +5,7 @@
 #include "util.h"
 #include "pa6.h"
 #include <getopt.h>
-
+#include <time.h>
 pid_t parentPid;
 FILE* pLogFile;
 
@@ -43,9 +43,19 @@ void eat(){
 
 }
 
+time_t get_end_time(){
+	clock_t start_time;
+	start_time = clock();
+	int delay = ((rand() * 10) % 1500000) + 100000;
+	if (delay < 0) delay = -delay;
+	printf("delay - %d\n", delay);
+	return start_time + delay;
+}
+
 
 void think(){
-
+	time_t end_time = get_end_time();
+	while (clock() < end_time);
 }
 
 int thinker_work(pid_t pid, int selfId) {
