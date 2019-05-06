@@ -12,33 +12,11 @@ FILE* pLogFile;
 table_t* table;
 thinker_t* thinker;
 delayed_transfer_t* delayed_transfer;
+int done_count = 0;
 
 /*
  * Child workflow
  */
-
-int system_done(pid_t pid, int selfId) {
-	register_event();
-	// sync
-	message_info_t msg;
-	sprintf(msg.msg.s_payload, log_done_fmt, get_time(), selfId);
-
-	msg.msg.s_header.s_local_time = get_time();
-	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.msg.s_header.s_payload_len = strlen(msg.msg.s_payload) + 1;
-	msg.msg.s_header.s_type = DONE;
-
-	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
-
-	receive_from_neighbor(thinker, DIRECTION_RIGHT, &msg);
-	receive_from_neighbor(thinker, DIRECTION_LEFT, &msg);
-
-	// sync ended
-	fprintf(pLogFile, log_received_all_done_fmt, get_time(), selfId);
-	fflush(pLogFile);
-
-	return 0;
-}
 
 int ask_for_fork(direction dir,pid_t pid, int selfId){
 	Message msg;
@@ -56,12 +34,22 @@ int compare_time(timestamp_t time, direction dir, int selfId){
 		return time - localtime;
 	switch (dir){
 		case DIRECTION_RIGHT:
-			return selfId == 1 ? 1 : -1;
+			return selfId == 0 ? 1 : -1;
 		case DIRECTION_LEFT:
 			return selfId == table->thinkers_count - 1 ? -1 : 1;
 		default:
 			return 0;
 	}
+}
+
+Message* prepare_ack_message(pid_t pid, int selfId){
+	Message* msg = malloc(sizeof(Message));
+	sprintf(msg->s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
+	msg->s_header.s_local_time = get_time();
+	msg->s_header.s_magic = MESSAGE_MAGIC;
+	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
+	msg->s_header.s_type = ACK;
+	return msg;
 }
 
 Message* prepare_transfer_message(pid_t pid, int selfId){
@@ -105,6 +93,8 @@ int process_message_info(message_info_t* info, int selfId, pid_t pid){
 						thinker->left_fork->dirty = 0;
 						Message* msg = prepare_transfer_message(pid, selfId);
 						send_to_neighbor(thinker, DIRECTION_LEFT, msg);
+						msg = prepare_ack_message(pid, selfId);
+						send_to_neighbor(thinker, DIRECTION_LEFT, msg);
 						break;
 					}
 					case DIRECTION_RIGHT:{
@@ -113,6 +103,8 @@ int process_message_info(message_info_t* info, int selfId, pid_t pid){
 						thinker->right_fork->enabled = 0;
 						thinker->right_fork->dirty = 0;
 						Message* msg = prepare_transfer_message(pid, selfId);
+						send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
+						msg = prepare_ack_message(pid, selfId);
 						send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
 						break;
 					}
@@ -133,6 +125,11 @@ int process_message_info(message_info_t* info, int selfId, pid_t pid){
 			}
 			break;
 		}
+		case DONE:{
+			done_count++;
+			break;
+		}
+
 		default:
 			return -1;
 	}
@@ -146,11 +143,13 @@ int check_delayed_transfers(pid_t pid, int selfId){
 		    send_to_neighbor(thinker, DIRECTION_LEFT, msg);
 			thinker->left_fork->enabled = 0;
 			thinker->left_fork->dirty = 0;
+			delayed_transfer->left_neighbor = 0;
 		}
 		if (delayed_transfer->right_neighbor){
 			send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
 			thinker->right_fork->enabled = 0;
 			thinker->right_fork->dirty = 0;
+			delayed_transfer->right_neighbor = 0;
 		}
 	}
 	return 0;
@@ -161,21 +160,22 @@ void eat(pid_t pid, int selfId){
 		ask_for_fork(DIRECTION_LEFT, pid, selfId);
 	if (!thinker->right_fork->enabled)
 		ask_for_fork(DIRECTION_RIGHT, pid, selfId);
-	fprintf(pLogFile, "process - %d wants to get message\n", selfId);
-	fflush(pLogFile);
 	while (!thinker->left_fork->enabled || !thinker->right_fork->enabled){
 		message_info_t msg;
 		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
-		fprintf(pLogFile, "process - %d have got message\n", selfId);
+		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
+		fprintf(pLogFile, "process - %d have got %s message from %s\n", selfId, arr, from);
 		fflush(pLogFile);
 		process_message_info(&msg, selfId, pid);
 	}
-    fprintf(pLogFile, "process - %d has EAT\n", selfId);
+    fprintf(pLogFile, "process - %d now can EAT\n", selfId);
 	fflush(pLogFile);
 	//EAT
 	thinker->right_fork->dirty = 1;
 	thinker->left_fork->dirty = 1;
 	check_delayed_transfers(pid, selfId);
+	register_event();
 }
 
 time_t get_end_time(){
@@ -189,6 +189,10 @@ time_t get_end_time(){
 
 
 int process_request(message_info_t* info, pid_t pid, int selfId){
+	if (info->msg.s_header.s_type == DONE){
+		done_count++;
+		return 0;
+	}
 	switch (info->dir){
 		case DIRECTION_BOTH:
 			return -1;
@@ -220,8 +224,36 @@ void think(pid_t pid, int selfId){
 	while (clock() < end_time){
 		if (try_receive_message(thinker, &msg) <= 0)
 			continue;
+		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
+		fprintf(pLogFile, "process - %d have got %s message from %s (while think)\n", selfId, arr, from);
+		fflush(pLogFile);
 		process_request(&msg, pid, selfId);
 	}
+}
+
+
+int system_done(pid_t pid, int selfId) {
+	register_event();
+	// sync
+	message_info_t msg;
+	sprintf(msg.msg.s_payload, log_done_fmt, get_time(), selfId);
+
+	msg.msg.s_header.s_local_time = get_time();
+	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.msg.s_header.s_payload_len = strlen(msg.msg.s_payload) + 1;
+	msg.msg.s_header.s_type = DONE;
+
+	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
+	while (done_count < 2){
+		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
+		process_message_info(&msg,selfId,pid);
+	}
+
+	fprintf(pLogFile, log_received_all_done_fmt, get_time(), selfId);
+	fflush(pLogFile);
+
+	return 0;
 }
 
 int thinker_work(pid_t pid, int selfId) {
@@ -294,7 +326,7 @@ int main(int argc, char **argv) {
 	init_forks();
 	pid_t childPid = 0;
 	int id;
-	for (id = 0; id < childCount - 1; id++) {
+	for (id = 0; id < childCount; id++) {
 		childPid = fork();
 		if (!childPid) {
 
@@ -306,14 +338,9 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-	if (id == 4) {
-		closeUnusedPipes(4, table);
-		system_started(getpid(), 4);
-	}
-//	if (childPid != 0) {
-//		int status;
-//		while (wait(&status) > 0);
-//	}
+	for (int i = 0 ; i < table->thinkers_count; i++)
+		wait(0);
+
 
 	freePipeLines();
 	fclose(get_pipefile());
