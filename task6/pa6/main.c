@@ -213,7 +213,7 @@ void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
 	message_info_t msg;
 	while (clock() < end_time){
-		if (!try_receive_message(thinker, DIRECTION_BOTH, &msg))
+		if (try_receive_message(thinker, DIRECTION_BOTH, &msg) > 0)
 			continue;
 		process_request(&msg, pid, selfId);
 	}
