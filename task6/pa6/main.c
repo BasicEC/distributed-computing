@@ -161,12 +161,17 @@ void eat(pid_t pid, int selfId){
 		ask_for_fork(DIRECTION_LEFT, pid, selfId);
 	if (!thinker->right_fork->enabled)
 		ask_for_fork(DIRECTION_RIGHT, pid, selfId);
+	fprintf(pLogFile, "process - %d wants to get message\n", selfId);
+	fflush(pLogFile);
 	while (!thinker->left_fork->enabled || !thinker->right_fork->enabled){
 		message_info_t msg;
 		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
+		fprintf(pLogFile, "process - %d have got message\n", selfId);
+		fflush(pLogFile);
 		process_message_info(&msg, selfId, pid);
 	}
-
+    fprintf(pLogFile, "process - %d has EAT\n", selfId);
+	fflush(pLogFile);
 	//EAT
 	thinker->right_fork->dirty = 1;
 	thinker->left_fork->dirty = 1;
@@ -213,7 +218,7 @@ void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
 	message_info_t msg;
 	while (clock() < end_time){
-		if (try_receive_message(thinker, &msg) > 0)
+		if (try_receive_message(thinker, &msg) <= 0)
 			continue;
 		process_request(&msg, pid, selfId);
 	}
@@ -224,6 +229,7 @@ int thinker_work(pid_t pid, int selfId) {
 	for (int i = 0; i < 5; i++){
 		think(pid, selfId);
 		eat(pid, selfId);
+//		fprintf(pLogFile, "process - %d has EAT\n", selfId);
 	}
 	// work is done
 	fprintf(pLogFile, log_done_fmt, get_time(), selfId);
