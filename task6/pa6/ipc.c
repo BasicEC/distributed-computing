@@ -77,13 +77,18 @@ int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
     return 0;
 }
 
-int try_receive_message(thinker_t* source, direction dir, message_info_t* msg){
+int try_receive_message(thinker_t* source, message_info_t* msg){
     int result;
     result = readPipe(source->right_neighbor->read, &msg->msg, 0);
-    if (result >=0)
+    if (result >=0){
+        msg->dir = DIRECTION_LEFT;
         return result;
+    }
     result = readPipe(source->left_neighbor->read, &msg->msg, 0);
-    if (result >=0) return  result;
+    if (result >=0) {
+        msg->dir = DIRECTION_RIGHT;
+        return result;
+    }
     return 0;
 
 }
