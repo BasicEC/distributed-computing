@@ -39,6 +39,11 @@ typedef struct{
 	thinker_t* thinkers;
 } table_t;
 
+typedef struct{
+    int left_neighbor;
+	int right_neighbor;
+} delayed_transfer_t;
+
 timestamp_t get_time();
 void set_local_time(timestamp_t time);
 void register_event();

@@ -11,6 +11,7 @@ FILE* pLogFile;
 
 table_t* table;
 thinker_t* thinker;
+delayed_transfer_t* delayed_transfer;
 
 /*
  * Child workflow
@@ -49,7 +50,31 @@ int ask_for_fork(direction dir,pid_t pid, int selfId){
 	return send_to_neighbor(thinker, dir, &msg);
 }
 
-int process_message_info(message_info_t* info){
+int compare_time(timestamp_t time, direction dir, int selfId){
+	timestamp_t localtime = get_time();
+	if (time != localtime)
+		return time - localtime;
+	switch (dir){
+		case DIRECTION_RIGHT:
+			return selfId == 1 ? 1 : -1;
+		case DIRECTION_LEFT:
+			return selfId == table->thinkers_count - 1 ? -1 : 1;
+		default:
+			return 0;
+	}
+}
+
+Message* prepare_transfer_message(pid_t pid, int selfId){
+	Message* msg = malloc(sizeof(Message));
+	sprintf(msg->s_payload, log_responce_with_fork_fmt, get_time(), selfId, pid);
+	msg->s_header.s_local_time = get_time();
+	msg->s_header.s_magic = MESSAGE_MAGIC;
+	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
+	msg->s_header.s_type = TRANSFER;
+	return msg;
+}
+
+int process_message_info(message_info_t* info, int selfId, pid_t pid){
 	switch (info->msg.s_header.s_type){
 		case TRANSFER:{
 			switch (info->dir){
@@ -69,11 +94,64 @@ int process_message_info(message_info_t* info){
 			break;
 		}
 		case ACK:{
-
+			if (compare_time(info->msg.s_header.s_local_time,info->dir, selfId) < 0){
+				switch (info->dir){
+					case DIRECTION_BOTH:
+						return -1;
+					case DIRECTION_LEFT:{
+						if (!thinker->left_fork->enabled)
+							return -1;
+						thinker->left_fork->enabled = 0;
+						thinker->left_fork->dirty = 0;
+						Message* msg = prepare_transfer_message(pid, selfId);
+						send_to_neighbor(thinker, DIRECTION_LEFT, msg);
+						break;
+					}
+					case DIRECTION_RIGHT:{
+						if (!thinker->right_fork->enabled)
+							return -1;
+						thinker->right_fork->enabled = 0;
+						thinker->right_fork->dirty = 0;
+						Message* msg = prepare_transfer_message(pid, selfId);
+						send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
+						break;
+					}
+				}
+			} else {
+				switch(info->dir){
+					case DIRECTION_LEFT:{
+						delayed_transfer->left_neighbor = 1;
+						break;
+					}
+					case DIRECTION_RIGHT:{
+						delayed_transfer->right_neighbor = 1;
+						break;
+					}
+					default:
+						return -1;
+				}
+			}
 			break;
 		}
 		default:
 			return -1;
+	}
+	return 0;
+}
+
+int check_delayed_transfers(pid_t pid, int selfId){
+	if (delayed_transfer->right_neighbor || delayed_transfer->left_neighbor){
+		Message* msg = prepare_transfer_message(pid, selfId);
+		if (delayed_transfer->left_neighbor){
+		    send_to_neighbor(thinker, DIRECTION_LEFT, msg);
+			thinker->left_fork->enabled = 0;
+			thinker->left_fork->dirty = 0;
+		}
+		if (delayed_transfer->right_neighbor){
+			send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
+			thinker->right_fork->enabled = 0;
+			thinker->right_fork->dirty = 0;
+		}
 	}
 	return 0;
 }
@@ -86,13 +164,13 @@ void eat(pid_t pid, int selfId){
 	while (!thinker->left_fork->enabled || !thinker->right_fork->enabled){
 		message_info_t msg;
 		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
-		process_message_info(&msg);
+		process_message_info(&msg, selfId, pid);
 	}
 
 	//EAT
-
 	thinker->right_fork->dirty = 1;
 	thinker->left_fork->dirty = 1;
+	check_delayed_transfers(pid, selfId);
 }
 
 time_t get_end_time(){
@@ -100,19 +178,10 @@ time_t get_end_time(){
 	start_time = clock();
 	int delay = ((rand() * 10) % 1500000) + 100000;
 	if (delay < 0) delay = -delay;
-	printf("delay - %d\n", delay);
+//	printf("delay - %d\n", delay);
 	return start_time + delay;
 }
 
-Message* prepare_transfer_message(pid_t pid, int selfId){
-	Message* msg = malloc(sizeof(Message));
-	sprintf(msg->s_payload, log_responce_with_fork_fmt, get_time(), selfId, pid);
-	msg->s_header.s_local_time = get_time();
-	msg->s_header.s_magic = MESSAGE_MAGIC;
-	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
-	msg->s_header.s_type = TRANSFER;
-	return msg;
-}
 
 int process_request(message_info_t* info, pid_t pid, int selfId){
 	switch (info->dir){
@@ -164,6 +233,7 @@ int thinker_work(pid_t pid, int selfId) {
 
 int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
+	delayed_transfer = malloc(sizeof(delayed_transfer_t));
 	register_event();
 
 	message_info_t msg;
