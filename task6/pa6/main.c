@@ -19,15 +19,15 @@ thinker_t* thinker;
 int system_done(pid_t pid, int selfId) {
 	register_event();
 	// sync
-	Message msg;
-	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId);
+	message_info_t msg;
+	sprintf(msg.msg.s_payload, log_done_fmt, get_time(), selfId);
 
-	msg.s_header.s_local_time = get_time();
-	msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
-	msg.s_header.s_type = DONE;
+	msg.msg.s_header.s_local_time = get_time();
+	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.msg.s_header.s_payload_len = strlen(msg.msg.s_payload) + 1;
+	msg.msg.s_header.s_type = DONE;
 
-	send_to_neighbor(thinker, DIRECTION_BOTH, &msg);
+	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
 
 	receive_from_neighbor(thinker, DIRECTION_RIGHT, &msg);
 	receive_from_neighbor(thinker, DIRECTION_LEFT, &msg);
@@ -46,22 +46,49 @@ int ask_for_fork(direction dir,pid_t pid, int selfId){
 	msg.s_header.s_magic = MESSAGE_MAGIC;
 	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
 	msg.s_header.s_type = ACK;
-	int result = send_to_neighbor(thinker, dir, &msg);
-	if (result < 0) return -1;
-	receive_from_neighbor(thinker, dir, &msg);
+	return send_to_neighbor(thinker, dir, &msg);
+}
+
+int process_message_info(message_info_t* info){
+	switch (info->msg.s_header.s_type){
+		case TRANSFER:{
+			switch (info->dir){
+				case DIRECTION_LEFT:{
+					thinker->left_fork->enabled = 1;
+					thinker->left_fork->dirty = 0;
+					break;
+				}
+				case DIRECTION_RIGHT:{
+					thinker->right_fork->enabled = 1;
+					thinker->right_fork->dirty = 0;
+					break;
+				}
+				default:
+					return -1;
+			}
+			break;
+		}
+		case ACK:{
+
+			break;
+		}
+		default:
+			return -1;
+	}
+	return 0;
 }
 
 void eat(pid_t pid, int selfId){
-	if (!thinker->left_fork->enabled) {
+	if (!thinker->left_fork->enabled)
 		ask_for_fork(DIRECTION_LEFT, pid, selfId);
-		thinker->left_fork->enabled = 1;
-		thinker->left_fork->dirty = 0;
-	}
-	if (!thinker->right_fork->enabled) {
+	if (!thinker->right_fork->enabled)
 		ask_for_fork(DIRECTION_RIGHT, pid, selfId);
-		thinker->right_fork->dirty = 0;
-		thinker->right_fork->enabled = 1;
+	while (!thinker->left_fork->enabled || !thinker->right_fork->enabled){
+		message_info_t msg;
+		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
+		process_message_info(&msg);
 	}
+
 	//EAT
 
 	thinker->right_fork->dirty = 1;
@@ -98,6 +125,7 @@ int process_request(message_info_t* info, pid_t pid, int selfId){
 			thinker->left_fork->dirty = 0;
 			Message* msg = prepare_transfer_message(pid, selfId);
 			send_to_neighbor(thinker, DIRECTION_LEFT, msg);
+			break;
 		}
 		case DIRECTION_RIGHT:{
 			if (!thinker->right_fork->enabled)
@@ -106,6 +134,7 @@ int process_request(message_info_t* info, pid_t pid, int selfId){
 			thinker->right_fork->dirty = 0;
 			Message* msg = prepare_transfer_message(pid, selfId);
 			send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
+			break;
 		}
 	}
 	return 0;
@@ -137,13 +166,13 @@ int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
 	register_event();
 
-	Message msg;
-	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
-	msg.s_header.s_local_time = get_time();
-	msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.s_header.s_payload_len = (uint16_t)(strlen(msg.s_payload) + 1);
-	msg.s_header.s_type = STARTED;
-	send_to_neighbor(thinker, DIRECTION_BOTH, &msg);
+	message_info_t msg;
+	sprintf(msg.msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
+	msg.msg.s_header.s_local_time = get_time();
+	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.msg.s_header.s_payload_len = (uint16_t)(strlen(msg.msg.s_payload) + 1);
+	msg.msg.s_header.s_type = STARTED;
+	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
 
 	receive_from_neighbor(thinker, DIRECTION_RIGHT, &msg);
 	receive_from_neighbor(thinker, DIRECTION_LEFT, &msg);
