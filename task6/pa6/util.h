@@ -2,8 +2,8 @@
 #ifndef _UTIL
 #define _UTIL
 
-#include <bits/types/FILE.h>
 #include "ipc.h"
+#include <stdio.h>
 
 
 typedef struct {
@@ -19,6 +19,7 @@ typedef struct {
 typedef struct{
 	connection_t* left_neighbor;
 	connection_t* right_neighbor;
+	int pipe_to_parent;
 	fork_t* left_fork;
 	fork_t* right_fork;
 } thinker_t;

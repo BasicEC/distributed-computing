@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-void initPipeLines(table_t*);
+void initPipeLines(table_t*, int*);
 int getOpenedPipesFDCount();
 void closeUnusedPipes(int selfId, table_t* table);
 void freePipeLines();

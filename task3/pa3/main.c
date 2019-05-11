@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
 	processID = 0;
 	parentPid = getpid();
 
-	pLogFile = fopen(evengs_log, "w+");
+	pLogFile = fopen(events_log, "w+");
 	set_pipefile(fopen(pipes_log, "w+"));
 
 	initPipeLines(childCount + 1);

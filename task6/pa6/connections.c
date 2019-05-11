@@ -17,7 +17,7 @@ void allocate_connections(table_t* table){
 }
 
 
-void initPipeLines(table_t* table) {
+void initPipeLines(table_t* table, int* children) {
 	allocate_connections(table);
 	for (int i = 0; i < table->thinkers_count; i++) {
 		thinker_t source = table->thinkers[i];
@@ -30,6 +30,9 @@ void initPipeLines(table_t* table) {
 		pipe2(pipe_ids, O_NONBLOCK);
 		source.left_neighbor->read = pipe_ids[0];
 		destination_left.right_neighbor->write = pipe_ids[1];
+		pipe2(pipe_ids, O_NONBLOCK);
+		children[i] = pipe_ids[0];
+		source.pipe_to_parent = pipe_ids[1];
 	}
 }
 
@@ -43,12 +46,14 @@ void closeUnusedPipes(int selfId, table_t* table) {
 			closePipe(table->thinkers[right].right_neighbor->write);
 			closePipe(table->thinkers[right].right_neighbor->read);
 			closePipe(table->thinkers[right].left_neighbor->write);
+            closePipe(table->thinkers[right].left_neighbor->read);
 			continue;
 		}
 		if(i == left){
 			closePipe(table->thinkers[left].left_neighbor->write);
 			closePipe(table->thinkers[left].left_neighbor->read);
 			closePipe(table->thinkers[left].right_neighbor->write);
+			closePipe(table->thinkers[left].right_neighbor->read);
 			continue;
 		}
 		closePipe(table->thinkers[i].left_neighbor->write);
