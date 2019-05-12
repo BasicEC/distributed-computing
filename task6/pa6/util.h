@@ -19,10 +19,8 @@ typedef struct {
 typedef struct{
 	connection_t* left_neighbor;
 	connection_t* right_neighbor;
-	int pipe_to_parent;
 	fork_t* left_fork;
 	fork_t* right_fork;
-	int** useless_pipes;
 } thinker_t;
 
 typedef enum{
@@ -39,6 +37,7 @@ typedef struct{
 typedef struct{
 	int thinkers_count;
 	thinker_t* thinkers;
+	connection_t** connections;
 } table_t;
 
 typedef struct{

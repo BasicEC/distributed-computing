@@ -13,8 +13,6 @@ table_t* table;
 thinker_t* thinker;
 delayed_transfer_t* delayed_transfer;
 int done_count = 0;
-int** useless_pipes;
-int* children;
 
 /*
  * Child workflow
@@ -325,8 +323,8 @@ int main(int argc, char **argv) {
 	table = (table_t*)malloc(sizeof(table_t));
 	table->thinkers_count = childCount;
 	table->thinkers = (thinker_t*)malloc(sizeof(thinker_t)*childCount);
-	children = malloc(sizeof(int)* childCount);
-	initPipeLines(table, children);
+	initPipeLines(table);
+//	closeUnusedPipes(0, table);
 
 	init_forks();
 	pid_t childPid = 0;
@@ -336,15 +334,17 @@ int main(int argc, char **argv) {
 		if (!childPid) {
 			closeUnusedPipes(id, table);
 			system_started(getpid(), id);
-			break;
-
+			freePipeLines();
+			fclose(get_pipefile());
+			fclose(pLogFile);
+			exit(0);
 		} else if (childPid < 0) {
 			return -1;
 		}
 	}
 	for (int i = 0 ; i < table->thinkers_count; i++)
 		wait(0);
-
+    close_pipes_by_parent(table);
 
 	freePipeLines();
 	fclose(get_pipefile());
