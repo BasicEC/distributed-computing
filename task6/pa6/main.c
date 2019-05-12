@@ -313,22 +313,6 @@ void init_forks(){
 	}
 }
 
-void open_useless_pipes(int count){
-	useless_pipes = malloc(sizeof(int*) * count);
-	for (int i = 0 ; i < count; i++){
-		int* p = malloc(sizeof(int) * 2);
-		pipe2(p, O_NONBLOCK);
-		useless_pipes[i] = p;
-	}
-}
-
-void close_useless_pipes(int count){
-	for (int i = 0 ; i < count - get_childCount() + 2; i++ ){
-		close(useless_pipes[i][0]);
-		close(useless_pipes[i][1]);
-	}
-}
-
 
 int main(int argc, char **argv) {
 	arguments_t arguments = parse_command_line_argument(argc, argv);
@@ -343,9 +327,6 @@ int main(int argc, char **argv) {
 	table->thinkers = (thinker_t*)malloc(sizeof(thinker_t)*childCount);
 	children = malloc(sizeof(int)* childCount);
 	initPipeLines(table, children);
-	int useless_pipes_count = childCount * (childCount + 1) - childCount * 3;
-	useless_pipes_count = useless_pipes_count < 0 ? 0 : useless_pipes_count;
-	open_useless_pipes(useless_pipes_count);
 
 	init_forks();
 	pid_t childPid = 0;
@@ -354,7 +335,6 @@ int main(int argc, char **argv) {
 		childPid = fork();
 		if (!childPid) {
 			closeUnusedPipes(id, table);
-			close_useless_pipes(useless_pipes_count);
 			system_started(getpid(), id);
 			break;
 
@@ -362,8 +342,6 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-	closeUnusedPipes(-5, table);
-	close_useless_pipes(useless_pipes_count);
 	for (int i = 0 ; i < table->thinkers_count; i++)
 		wait(0);
 

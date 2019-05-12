@@ -22,6 +22,7 @@ typedef struct{
 	int pipe_to_parent;
 	fork_t* left_fork;
 	fork_t* right_fork;
+	int** useless_pipes;
 } thinker_t;
 
 typedef enum{
