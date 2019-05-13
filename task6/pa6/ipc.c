@@ -34,7 +34,7 @@ int readPipe(int fd, Message* msg, char isWait) {
 	while (1) {
 		int readed = read(fd, &msg->s_header, sizeof(MessageHeader));
 
-		if (readed < 0) {
+		if (readed <= 0) {
 			if (isWait) {
 			} else {
 				return E_PIPE_NO_DATA;

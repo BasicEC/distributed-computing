@@ -16,12 +16,6 @@ void allocate_connections(table_t* table){
 	}
 }
 
-int check_useless_connection_needed(int i, int j, table_t* table){
-	if (i == j)
-		return 0;
-	return 1;
-}
-
 void establish_useless_connections(table_t* table){
 	for (int i = 0; i < table->thinkers_count + 1; i++){
 		for (int j = 0; j < table->thinkers_count + 1; j++){
@@ -48,7 +42,7 @@ void initPipeLines(table_t* table) {
 		int j = i - 1;
 		thinker_t* destination_left = &table->thinkers[j+1 == table->thinkers_count ? 0 : j+1];
 		thinker_t* destination_right = &table->thinkers[j-1 == -1 ? table->thinkers_count - 1 : j-1];
-		int left_id = i+1 == table->thinkers_count + 1? 0 : i+1;
+		int left_id = i+1 == table->thinkers_count + 1? 1 : i+1;
 		int right_id = i-1 == 0 ? table->thinkers_count : i-1;
 		source->right_neighbor->read = table->connections[i][right_id].read;
 		destination_right->left_neighbor->write = table->connections[right_id][i].write;
@@ -58,20 +52,6 @@ void initPipeLines(table_t* table) {
 }
 
 
-void close_all_thinker_pipes_1(thinker_t* thinker, int useless_nodes_count){
-	closePipe(thinker->left_neighbor->write);
-	closePipe(thinker->left_neighbor->read);
-	closePipe(thinker->right_neighbor->write);
-	closePipe(thinker->right_neighbor->read);
-}
-
-void close_all_thinker_pipes(thinker_t* thinker, int useless_nodes_count){
-	closePipe(thinker->left_neighbor->write);
-	closePipe(thinker->left_neighbor->read);
-	closePipe(thinker->right_neighbor->write);
-	closePipe(thinker->right_neighbor->read);
-}
-
 void closeUnusedPipes(int selfId, table_t* table) {
 	for (int i = 0; i < table->thinkers_count + 1; i++){
 		if (i == selfId + 1)
@@ -80,7 +60,7 @@ void closeUnusedPipes(int selfId, table_t* table) {
 		    if (i == j)
 				continue;
 		    if (j == selfId + 1){
-				closePipe(table->connections[i][j].read);
+				closePipe(table->connections[i][j].write);
 		    }
 		    else {
 				closePipe(table->connections[i][j].read);
@@ -90,14 +70,6 @@ void closeUnusedPipes(int selfId, table_t* table) {
 	}
 }
 
-
-void close_pipes_by_parent(table_t* table){
-	int useless_nodes_count = table->thinkers_count - 3;
-	useless_nodes_count = useless_nodes_count < 0 ? 0 : useless_nodes_count;
-	for (int i = 0 ; i < table->thinkers_count; i++) {
-		close_all_thinker_pipes_1(&table->thinkers[i], useless_nodes_count);
-	}
-}
 
 
 void freePipeLines() {

@@ -342,9 +342,16 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
+//	closeUnusedPipes(id, table);
+//	system_started(getpid(), id);
+//	freePipeLines();
+//	fclose(get_pipefile());
+//	fclose(pLogFile);
+//	exit(0);
+
 	for (int i = 0 ; i < table->thinkers_count; i++)
 		wait(0);
-    close_pipes_by_parent(table);
+    closeUnusedPipes(0, table);
 
 	freePipeLines();
 	fclose(get_pipefile());
