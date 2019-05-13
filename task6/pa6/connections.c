@@ -59,13 +59,8 @@ void closeUnusedPipes(int selfId, table_t* table) {
 		for (int j = 0 ; j < table->thinkers_count + 1; j++){
 		    if (i == j)
 				continue;
-		    if (j == selfId + 1){
-				closePipe(table->connections[i][j].write);
-		    }
-		    else {
-				closePipe(table->connections[i][j].read);
-				closePipe(table->connections[i][j].write);
-			}
+			closePipe(table->connections[i][j].read);
+			closePipe(table->connections[i][j].write);
 		}
 	}
 }
