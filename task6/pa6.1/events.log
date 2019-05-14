@@ -1,0 +1,83 @@
+1: process 0 (pid 24934, parent 24933) has STARTED
+1: process 2 (pid 24936, parent 24933) has STARTED
+1: process 1 (pid 24935, parent 24933) has STARTED
+process - 2 have got ASK message from RIGHT
+process - 1 have got ASK message from RIGHT
+process - 0 have got ASK message from RIGHT
+process - 0 have got TRANSFER message from LEFT
+process - 0 now can EAT
+process - 1 have got TRANSFER message from LEFT
+process - 1 have got ASK message from LEFT
+process - 2 have got TRANSFER message from LEFT
+process - 0 have got ASK message from LEFT (while think)
+process - 1 have got TRANSFER message from RIGHT
+process - 1 now can EAT
+process - 2 have got TRANSFER message from RIGHT
+process - 2 now can EAT
+process - 1 have got ASK message from RIGHT (while think)
+process - 2 have got ASK message from LEFT (while think)
+process - 0 have got TRANSFER message from LEFT
+process - 0 have got TRANSFER message from RIGHT
+process - 0 now can EAT
+process - 2 have got ASK message from RIGHT (while think)
+process - 0 have got ASK message from LEFT (while think)
+process - 1 have got TRANSFER message from LEFT
+process - 1 have got TRANSFER message from RIGHT
+process - 1 now can EAT
+process - 0 have got ASK message from RIGHT (while think)
+process - 1 have got ASK message from LEFT (while think)
+process - 2 have got TRANSFER message from LEFT
+process - 2 have got TRANSFER message from RIGHT
+process - 2 now can EAT
+process - 1 have got ASK message from RIGHT (while think)
+process - 2 have got ASK message from LEFT (while think)
+process - 0 have got TRANSFER message from LEFT
+process - 0 have got TRANSFER message from RIGHT
+process - 0 now can EAT
+process - 2 have got ASK message from RIGHT (while think)
+process - 0 have got ASK message from LEFT (while think)
+process - 1 have got TRANSFER message from LEFT
+process - 1 have got TRANSFER message from RIGHT
+process - 1 now can EAT
+process - 0 have got ASK message from RIGHT (while think)
+process - 2 have got TRANSFER message from LEFT
+process - 1 have got ASK message from LEFT (while think)
+process - 2 have got TRANSFER message from RIGHT
+process - 2 now can EAT
+process - 1 have got ASK message from RIGHT (while think)
+process - 2 have got ASK message from LEFT (while think)
+process - 0 have got TRANSFER message from LEFT
+process - 0 have got TRANSFER message from RIGHT
+process - 0 now can EAT
+process - 2 have got ASK message from RIGHT (while think)
+process - 0 have got ASK message from LEFT (while think)
+process - 1 have got TRANSFER message from LEFT
+process - 1 have got TRANSFER message from RIGHT
+process - 1 now can EAT
+process - 0 have got ASK message from RIGHT (while think)
+process - 1 have got ASK message from LEFT (while think)
+process - 2 have got TRANSFER message from LEFT
+process - 2 have got TRANSFER message from RIGHT
+process - 2 now can EAT
+process - 1 have got ASK message from RIGHT (while think)
+process - 2 have got ASK message from LEFT (while think)
+process - 0 have got TRANSFER message from LEFT
+process - 0 have got TRANSFER message from RIGHT
+process - 0 now can EAT
+process - 2 have got ASK message from RIGHT (while think)
+6: process 0 has DONE
+process - 1 have got TRANSFER message from RIGHT
+process - 1 have got TRANSFER message from LEFT
+process - 2 have got TRANSFER message from LEFT (while think)
+process - 1 have got TRANSFER message from RIGHT
+process - 1 now can EAT
+process - 2 have got TRANSFER message from LEFT
+process - 2 have got ASK message from LEFT
+6: process 1 has DONE
+process - 2 have got TRANSFER message from RIGHT
+process - 2 have got TRANSFER message from RIGHT
+process - 2 now can EAT
+6: process 2 has DONE
+7: process 0 received all DONE messages
+7: process 2 received all DONE messages
+7: process 1 received all DONE messages
