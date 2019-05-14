@@ -11,7 +11,8 @@ FILE* pLogFile;
 
 table_t* table;
 thinker_t* thinker;
-delayed_transfer_t* delayed_transfer;
+fork_t* forks;
+int* delayed_transfers;
 int done_count = 0;
 
 void print(char*);
@@ -226,7 +227,7 @@ void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
 	message_info_t msg;
 	while (clock() < end_time){
-		if (try_receive_message(thinker, &msg) <= 0)
+		if (try_receive_message(table, &msg, selfId) <= 0)
 			continue;
 		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
 		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
@@ -274,7 +275,8 @@ int thinker_work(pid_t pid, int selfId) {
 
 int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
-	delayed_transfer = malloc(sizeof(delayed_transfer_t));
+	delayed_transfers = malloc(sizeof(int) * get_childCount());
+	forks = malloc(sizeof(fork_t) * get_childCount());
 	register_event();
 
 	message_info_t msg;
@@ -327,7 +329,6 @@ int main(int argc, char **argv) {
 	table->thinkers_count = childCount;
 	table->thinkers = (thinker_t*)malloc(sizeof(thinker_t)*childCount);
 	initPipeLines(table);
-//	closeUnusedPipes(0, table);
 
 	init_forks();
 	pid_t childPid = 0;

@@ -77,18 +77,27 @@ int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
     return 0;
 }
 
-int try_receive_message(thinker_t* source, message_info_t* msg){
+int try_receive_message(table_t* table, message_info_t* msg, int selfId){
     int result;
-    result = readPipe(source->right_neighbor->read, &msg->msg, 0);
-    if (result >=0){
-        msg->dir = DIRECTION_RIGHT;
-        return msg->msg.s_header.s_payload_len;
+//    result = readPipe(source->right_neighbor->read, &msg->msg, 0);
+//    if (result >=0){
+//        msg->dir = DIRECTION_RIGHT;
+//        return msg->msg.s_header.s_payload_len;
+//    }
+//    result = readPipe(source->left_neighbor->read, &msg->msg, 0);
+//    if (result >=0) {
+//        msg->dir = DIRECTION_LEFT;
+//        return msg->msg.s_header.s_payload_len;
+//    }
+    for (int i = 0; i < table->thinkers_count; i++){
+       result = readPipe(table->connections[selfId][i].read, &msg->msg, 0);
+       if (result >=0){
+           msg->dir = i;
+           return msg->msg.s_header.s_payload_len;
+        }
+
     }
-    result = readPipe(source->left_neighbor->read, &msg->msg, 0);
-    if (result >=0) {
-        msg->dir = DIRECTION_LEFT;
-        return msg->msg.s_header.s_payload_len;
-    }
+
     return 0;
 
 }
