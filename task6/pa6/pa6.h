@@ -29,4 +29,6 @@ static const char * const log_request_for_fork_fmt =
 static const char * const log_responce_with_fork_fmt =
         "%d: process %1d give fork to process %d\n";
 
+static const char * const log_loop_operation_fmt =
+        "process %d is doing %d iteration out of %d\n";
 #endif //TASK6_PA6_H

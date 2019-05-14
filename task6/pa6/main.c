@@ -14,9 +14,8 @@ thinker_t* thinker;
 delayed_transfer_t* delayed_transfer;
 int done_count = 0;
 
-/*
- * Child workflow
- */
+void print(char*);
+
 
 int ask_for_fork(direction dir,pid_t pid, int selfId){
 	Message msg;
@@ -155,7 +154,7 @@ int check_delayed_transfers(pid_t pid, int selfId){
 	return 0;
 }
 
-void eat(pid_t pid, int selfId){
+void eat(pid_t pid, int selfId, int iteration){
 	if (!thinker->left_fork->enabled)
 		ask_for_fork(DIRECTION_LEFT, pid, selfId);
 	if (!thinker->right_fork->enabled)
@@ -172,6 +171,11 @@ void eat(pid_t pid, int selfId){
     fprintf(pLogFile, "process - %d now can EAT\n", selfId);
 	fflush(pLogFile);
 	//EAT
+	char arr[100];
+	sprintf(arr, log_loop_operation_fmt, selfId + 1, iteration + 1, 5);
+	print(arr);
+
+
 	thinker->right_fork->dirty = 1;
 	thinker->left_fork->dirty = 1;
 	check_delayed_transfers(pid, selfId);
@@ -260,8 +264,7 @@ int thinker_work(pid_t pid, int selfId) {
 
 	for (int i = 0; i < 5; i++){
 		think(pid, selfId);
-		eat(pid, selfId);
-//		fprintf(pLogFile, "process - %d has EAT\n", selfId);
+		eat(pid, selfId, i);
 	}
 	// work is done
 	fprintf(pLogFile, log_done_fmt, get_time(), selfId);
@@ -342,12 +345,6 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-//	closeUnusedPipes(id, table);
-//	system_started(getpid(), id);
-//	freePipeLines();
-//	fclose(get_pipefile());
-//	fclose(pLogFile);
-//	exit(0);
 
 	for (int i = 0 ; i < table->thinkers_count; i++)
 		wait(0);
