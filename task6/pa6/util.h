@@ -41,6 +41,12 @@ typedef struct{
 	connection_t** connections;
 } table_t;
 
+typedef struct {
+    thinker_t* thinker;
+    table_t* table;
+
+}thinker_with_table_wrapper;
+
 typedef struct{
     int left_neighbor;
 	int right_neighbor;

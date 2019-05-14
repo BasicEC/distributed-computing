@@ -55,7 +55,8 @@ int readPipe(int fd, Message* msg, char isWait) {
 }
 
 int send(void * self, local_id dst, const Message * msg) {
-	return writePipe(((thinker_t*)self)->id, msg);
+    thinker_with_table_wrapper* wrapper = self;
+	return writePipe(wrapper->table->connections[wrapper->thinker->id][dst].write, msg);
 }
 
 int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
@@ -150,8 +151,12 @@ int receive(void * self, local_id from, Message * msg) {
 
 
 int receive_any(void * self, Message * msg) {
+    thinker_with_table_wrapper* wrapper = self;
     while (1){
-        for ()
+        for (int i = 0 ; i < wrapper->table->thinkers_count; i++){
+            int result = readPipe(wrapper->table->connections[wrapper->thinker->id][i].read, msg, 0);
+            if (result > 0)
+                return result;
+        }
     }
-    return -1;
 }
