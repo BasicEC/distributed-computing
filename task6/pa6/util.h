@@ -19,6 +19,7 @@ typedef struct {
 typedef struct{
 	connection_t* left_neighbor;
 	connection_t* right_neighbor;
+	int id;
 	fork_t* left_fork;
 	fork_t* right_fork;
 } thinker_t;

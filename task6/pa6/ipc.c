@@ -55,11 +55,7 @@ int readPipe(int fd, Message* msg, char isWait) {
 }
 
 int send(void * self, local_id dst, const Message * msg) {
-//	DataInfo* info = (DataInfo*)self;
-//    connection_t* pPipeLines = get_pPipeLines();
-//	int pipeId = pPipeLines[getPipeId(info->senderId, dst)].write;
-//	return writePipe(pipeId, msg);
-	return 0;
+	return writePipe(((thinker_t*)self)->id, msg);
 }
 
 int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
