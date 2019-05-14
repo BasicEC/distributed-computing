@@ -150,21 +150,8 @@ int receive(void * self, local_id from, Message * msg) {
 
 
 int receive_any(void * self, Message * msg) {
-//	DataInfo* info = (DataInfo*)self;
-//    connection_t* pPipeLines = get_pPipeLines();
-//	for (int id = 0; id <= get_childCount(); id++) {
-//		if (id != info->senderId) {
-//			int pipeId = pPipeLines[getPipeId(id, info->senderId)].read;
-//
-//			if (readPipe(pipeId, msg, 0) == 0) {
-//				info->receiveId = id;
-//				sync_time(msg->s_header.s_local_time);
-//
-//				return 0;
-//			}
-//		}
-//		//sleep(1);
-//	}
-
+    while (1){
+        for ()
+    }
     return -1;
 }

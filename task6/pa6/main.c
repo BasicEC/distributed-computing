@@ -162,11 +162,18 @@ void ask_for_forks(pid_t pid){
 	}
 }
 
+int is_all_forks_enabled(){
+	for (int i = 0 ; i < table->thinkers_count; i++)
+		if (!forks[i].enabled)
+			return 0;
+	return 1;
+}
+
 void eat(pid_t pid, int iteration){
     ask_for_forks(pid);
-	while (!thinker->left_fork->enabled || !thinker->right_fork->enabled){
+	while (!is_all_forks_enabled()){
 		message_info_t msg;
-		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
+		receive_any(thinker, DIRECTION_BOTH, &msg);
 		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
 		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
 		fprintf(pLogFile, "process - %d have got %s message from %s\n", thinker->id, arr, from);
