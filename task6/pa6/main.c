@@ -22,7 +22,7 @@ int ask_for_fork(int dir,pid_t pid, int selfId){
 	sprintf(msg.s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
+	msg.s_header.s_payload_len = (uint16_t)strlen(msg.s_payload) + (uint16_t)1;
 	msg.s_header.s_type = ACK;
 	return send(thinker, (local_id)dir, &msg);
 }
@@ -67,12 +67,12 @@ int process_message_info(Message* msg, int selfId, pid_t pid, int from){
 					return -1;
 				thinker->forks[from].enabled = 0;
 				Message* message = prepare_transfer_message(pid, selfId);
-				send(thinker,from, message);
+				send(thinker,(local_id)from, message);
 				message = prepare_ack_message(pid, selfId);
-				send(thinker,from, message);
-			} else {
+				send(thinker,(local_id)from, message);
+			} else
 			    delayed_transfers[from] = 1;
-			}
+
 			break;
 		}
 		case DONE:{
@@ -98,14 +98,14 @@ int check_delayed_transfers(pid_t pid, int selfId){
 }
 
 void ask_for_forks(pid_t pid){
-	for (int i = 0 ; i < table->thinkers_count; i++){
+	for (int i = 1 ; i < table->thinkers_count; i++){
 		if (!thinker->forks[i].enabled)
 			ask_for_fork(i, pid, thinker->id);
 	}
 }
 
 int is_all_forks_enabled(){
-	for (int i = 0 ; i < table->thinkers_count; i++)
+	for (int i = 1 ; i < table->thinkers_count; i++)
 		if (!thinker->forks[i].enabled)
 			return 0;
 	return 1;
@@ -146,19 +146,19 @@ time_t get_end_time(){
 }
 
 
-int process_request(message_info_t* info, pid_t pid, int selfId){
-	switch (info->msg.s_header.s_type){
+int process_request(Message* msg, pid_t pid, int selfId, int from){
+	switch (msg->s_header.s_type){
 		case DONE:{
 			done_count++;
 			return 0;
 		}
 		case ACK:{
-			if (!thinker->forks[info->dir].enabled)
+			if (!thinker->forks[from].enabled)
 				return -1;
-			thinker->forks[info->dir].enabled = 0;
-			thinker->forks[info->dir].dirty = 0;
-			Message* msg = prepare_transfer_message(pid, selfId);
-			send(thinker, info->dir, msg);
+			thinker->forks[from].enabled = 0;
+			thinker->forks[from].dirty = 0;
+			Message* message = prepare_transfer_message(pid, selfId);
+			send(thinker, (local_id)from, message);
 			return 0;
 		}
 		default:
@@ -168,14 +168,15 @@ int process_request(message_info_t* info, pid_t pid, int selfId){
 
 void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
-	message_info_t msg;
+	Message msg;
 	while (clock() < end_time){
-		if (try_receive_message(thinker, &msg) <= 0)
+		int result = try_receive_message(thinker, &msg);
+		if (result <= 0)
 			continue;
-		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
-		fprintf(pLogFile, "process - %d have got %s message from %d (while think)\n", selfId, arr, msg.dir);
+		char* arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+		fprintf(pLogFile, "process - %d have got %s message from %d (while think)\n", selfId, arr, result);
 		fflush(pLogFile);
-		process_request(&msg, pid, selfId);
+		process_request(&msg, pid, selfId, result);
 	}
 }
 
@@ -188,13 +189,13 @@ int system_done(pid_t pid, int selfId) {
 
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
+	msg.s_header.s_payload_len = (uint16_t)strlen(msg.s_payload) + (uint16_t)1;
 	msg.s_header.s_type = DONE;
 
 	send_multicast(thinker, &msg);
-	while (done_count < table->thinkers_count - 1){
+	while (done_count < table->thinkers_count - 2){
 		int from = receive_any(thinker, &msg);
-		process_message_info(&msg,selfId,pid, from);
+		process_request(&msg,pid,selfId, from);
 	}
 
 	fprintf(pLogFile, log_received_all_done_fmt, get_time(), selfId);
@@ -253,9 +254,10 @@ arguments_t parse_command_line_argument(int argc, char** argv){
 
 void init_forks(){
 	for (int i = 0 ; i < table->thinkers_count; i++){
-		table->thinkers[i].forks = malloc(sizeof(fork_t) * table->thinkers_count - 1 );
+		table->thinkers[i].forks = malloc(sizeof(fork_t) * table->thinkers_count);
 		table->thinkers[i].connection_count = table->thinkers_count;
-		table->thinkers[i].forks[i].enabled = 1;
+		for (int j = i; j < table->thinkers_count; j++)
+			table->thinkers[i].forks[j].enabled = 1;
 	}
 }
 
@@ -278,8 +280,8 @@ int main(int argc, char **argv) {
 	int id;
 	for (id = 1; id < childCount - 1; id++) {
 		childPid = fork();
-		if (!childPid) {
-//			closeUnusedPipes(id, table);
+			if (!childPid) {
+			closeUnusedPipes(id, table);
 			system_started(getpid(), id);
 
 			freePipeLines();
@@ -290,7 +292,7 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-//	closeUnusedPipes(5, table);
+	closeUnusedPipes(5, table);
 	system_started(getpid(), 5);
 
 	for (int i = 0 ; i < table->thinkers_count; i++)

@@ -61,14 +61,13 @@ int send(void * self, local_id dst, const Message * msg) {
 }
 
 
-int try_receive_message(thinker_t* thinker, message_info_t* msg){
+int try_receive_message(thinker_t* thinker, Message* msg){
 	for (int i = 1 ; i < thinker->connection_count; i++){
 		if (i == thinker->id)
 			continue;
-		int result = readPipe(thinker->connections[i].read, &msg->msg, 0);
+		int result = readPipe(thinker->connections[i].read, msg, 0);
 		if (result > 0) {
-			msg->dir = i;
-			return result;
+			return i;
 		}
 	}
 
