@@ -121,7 +121,7 @@ void eat(pid_t pid, int iteration){
 		fflush(pLogFile);
 		process_message_info(&msg, thinker->id, pid, from);
 	}
-    fprintf(pLogFile, "process - %d now can EAT\n", thinker->id);
+    fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
 	fflush(pLogFile);
 	//EAT
 //	char arr[100];

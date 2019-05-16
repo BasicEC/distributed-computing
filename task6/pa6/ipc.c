@@ -77,7 +77,7 @@ int try_receive_message(thinker_t* thinker, Message* msg){
 
 int send_multicast(void * self, const Message * msg) {
 	thinker_t* thinker = self;
-    for (int i = 0; i < thinker->connection_count; i++) {
+    for (int i = 1; i < thinker->connection_count; i++) {
 		if (i == thinker->id)
 			continue;
 		writePipe(thinker->connections[i].write, msg);
