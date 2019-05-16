@@ -1,4 +1,5 @@
 
+#include <arpa/nameser.h>
 #include "main.h"
 #include "connections.h"
 #include "util.h"
@@ -55,80 +56,20 @@ int readPipe(int fd, Message* msg, char isWait) {
 }
 
 int send(void * self, local_id dst, const Message * msg) {
-    thinker_with_table_wrapper* wrapper = self;
-	return writePipe(wrapper->table->connections[wrapper->thinker->id][dst].write, msg);
+    thinker_t* thinker = self;
+	return writePipe(thinker->connections[dst].write, msg);
 }
 
-int send_to_neighbor(thinker_t* source, direction dir, Message* msg){
-    switch(dir){
-        case DIRECTION_BOTH: {
-            if (writePipe(source->left_neighbor->write, msg) < 0)
-                return -1;
-            return writePipe(source->right_neighbor->write, msg);
-        }
-        case DIRECTION_LEFT:
-            return writePipe(source->left_neighbor->write, msg);
-        case DIRECTION_RIGHT:
-            return writePipe(source->right_neighbor->write, msg);
-    }
-    return 0;
-}
 
-int try_receive_message(table_t* table, message_info_t* msg, int selfId){
-    int result;
-//    result = readPipe(source->right_neighbor->read, &msg->msg, 0);
-//    if (result >=0){
-//        msg->dir = DIRECTION_RIGHT;
-//        return msg->msg.s_header.s_payload_len;
-//    }
-//    result = readPipe(source->left_neighbor->read, &msg->msg, 0);
-//    if (result >=0) {
-//        msg->dir = DIRECTION_LEFT;
-//        return msg->msg.s_header.s_payload_len;
-//    }
-    for (int i = 0; i < table->thinkers_count; i++){
-       result = readPipe(table->connections[selfId][i].read, &msg->msg, 0);
-       if (result >=0){
-           msg->dir = i;
-           return msg->msg.s_header.s_payload_len;
-        }
-
-    }
+int try_receive_message(thinker_t* thinker, message_info_t* msg){
+	for (int i = 1 ; i < thinker->connection_count; i++){
+		int result = readPipe(thinker->connections[i].read, msg, 0);
+		if (result > 0)
+			return result;
+	}
 
     return 0;
 
-}
-
-int receive_from_neighbor(thinker_t* source, direction dir, message_info_t* msg){
-    int result = 0;
-    switch (dir){
-        case DIRECTION_BOTH:{
-            while(1){
-                result = readPipe(source->right_neighbor->read, &msg->msg, 0);
-                if (result >=0){
-                    msg->dir = DIRECTION_RIGHT;
-                    break;
-                }
-                result = readPipe(source->left_neighbor->read, &msg->msg, 0);
-                if (result >=0) {
-                    msg->dir = DIRECTION_LEFT;
-                    break;
-                }
-            }
-            break;
-        }
-        case DIRECTION_RIGHT:{
-            result = readPipe(source->right_neighbor->read, &msg->msg, 1);
-            msg->dir = DIRECTION_RIGHT;
-            break;
-        }
-        case DIRECTION_LEFT:{
-            result = readPipe(source->left_neighbor->read, &msg->msg, 1);
-            msg->dir = DIRECTION_LEFT;
-            break;
-        }
-    }
-    return result;
 }
 
 int send_multicast(void * self, const Message * msg) {
@@ -136,27 +77,19 @@ int send_multicast(void * self, const Message * msg) {
 }
 
 int receive(void * self, local_id from, Message * msg) {
-//	DataInfo* info = (DataInfo*)self;
-//    connection_t* pPipeLines = get_pPipeLines();
-//	int pipeId = pPipeLines[getPipeId(from, info->senderId)].read;
-//	int result = readPipe(pipeId, msg, 1);
-//
-//	if (result >= 0) {
-//		sync_time(msg->s_header.s_local_time);
-//	}
-
-//	return result;
+    thinker_t* thinker = self;
+	int result = readPipe(thinker->connections[from].read, msg, 1);
     return 0;
 }
 
 
 int receive_any(void * self, Message * msg) {
-    thinker_with_table_wrapper* wrapper = self;
+    thinker_t* thinker = self;
     while (1){
-        for (int i = 0 ; i < wrapper->table->thinkers_count; i++){
-            int result = readPipe(wrapper->table->connections[wrapper->thinker->id][i].read, msg, 0);
+        for (int i = 1 ; i < thinker->connection_count; i++){
+            int result = readPipe(thinker->connections[i].read, msg, 0);
             if (result > 0)
-                return result;
+                return i;
         }
     }
 }

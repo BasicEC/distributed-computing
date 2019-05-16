@@ -18,28 +18,21 @@ int done_count = 0;
 void print(char*);
 
 
-int ask_for_fork(direction dir,pid_t pid, int selfId){
+int ask_for_fork(int dir,pid_t pid, int selfId){
 	Message msg;
 	sprintf(msg.s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
 	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
 	msg.s_header.s_type = ACK;
-	return send(thinker, dir, &msg);
+	return send(thinker, (local_id)dir, &msg);
 }
 
-int compare_time(timestamp_t time, direction dir, int selfId){
+int compare_time(timestamp_t time, int dir, int selfId){
 	timestamp_t localtime = get_time();
 	if (time != localtime)
 		return time - localtime;
-	switch (dir){
-		case DIRECTION_RIGHT:
-			return selfId == 0 ? 1 : -1;
-		case DIRECTION_LEFT:
-			return selfId == table->thinkers_count - 1 ? -1 : 1;
-		default:
-			return 0;
-	}
+	return dir - selfId;
 }
 
 Message* prepare_ack_message(pid_t pid, int selfId){
@@ -172,11 +165,10 @@ int is_all_forks_enabled(){
 void eat(pid_t pid, int iteration){
     ask_for_forks(pid);
 	while (!is_all_forks_enabled()){
-		message_info_t msg;
-		receive_any(thinker, DIRECTION_BOTH, &msg);
-		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
-		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
-		fprintf(pLogFile, "process - %d have got %s message from %s\n", thinker->id, arr, from);
+		Message msg;
+		int from = receive_any(thinker, &msg);
+		char* arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+		fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
 		fflush(pLogFile);
 		process_message_info(&msg, thinker->id, pid);
 	}
@@ -228,11 +220,10 @@ void think(pid_t pid, int selfId){
 	time_t end_time = get_end_time();
 	message_info_t msg;
 	while (clock() < end_time){
-		if (try_receive_message(table, &msg, selfId) <= 0)
+		if (try_receive_message(thinker, &msg) <= 0)
 			continue;
 		char* arr = msg.msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
-		char* from = msg.dir == DIRECTION_LEFT ? "LEFT" : "RIGHT";
-		fprintf(pLogFile, "process - %d have got %s message from %s (while think)\n", selfId, arr, from);
+		fprintf(pLogFile, "process - %d have got %s message from %d (while think)\n", selfId, arr, msg.dir);
 		fflush(pLogFile);
 		process_request(&msg, pid, selfId);
 	}
@@ -276,20 +267,23 @@ int thinker_work(pid_t pid, int selfId) {
 
 int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
+	thinker->id = selfId;
 	delayed_transfers = malloc(sizeof(int) * get_childCount());
 	forks = malloc(sizeof(fork_t) * get_childCount());
 	register_event();
 
-	message_info_t msg;
-	sprintf(msg.msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
-	msg.msg.s_header.s_local_time = get_time();
-	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.msg.s_header.s_payload_len = (uint16_t)(strlen(msg.msg.s_payload) + 1);
-	msg.msg.s_header.s_type = STARTED;
-	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
+	Message msg;
+	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
+	msg.s_header.s_local_time = get_time();
+	msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.s_header.s_payload_len = (uint16_t)(strlen(msg.s_payload) + 1);
+	msg.s_header.s_type = STARTED;
+	send_multicast(thinker, &msg);
 
-	receive_from_neighbor(thinker, DIRECTION_RIGHT, &msg);
-	receive_from_neighbor(thinker, DIRECTION_LEFT, &msg);
+	for(int i = 1 ; i < table->thinkers_count; i++){
+		receive(thinker, (local_id)i, &msg);
+	}
+
 
 	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid);
 	fflush(pLogFile);
@@ -308,19 +302,16 @@ arguments_t parse_command_line_argument(int argc, char** argv){
 
 void init_forks(){
 	for (int i = 0 ; i < table->thinkers_count; i++){
-		table->thinkers[i].left_fork = malloc(sizeof(fork_t));
-		table->thinkers[i].left_fork->dirty = 1;
-		table->thinkers[i].left_fork->enabled = 0;
-		table->thinkers[i].right_fork = malloc(sizeof(fork_t));
-		table->thinkers[i].right_fork->dirty = 1;
-		table->thinkers[i].right_fork->enabled = 1;
+		table->thinkers[i].forks = malloc(sizeof(fork_t) * table->thinkers_count - 1 );
+		table->thinkers[i].connection_count = table->thinkers_count;
+		table->thinkers[i].forks[i].enabled = 1;
 	}
 }
 
 
 int main(int argc, char **argv) {
 	arguments_t arguments = parse_command_line_argument(argc, argv);
-	int childCount = arguments.count;
+	int childCount = arguments.count + 1;
 	set_childCount(childCount);
 	parentPid = getpid();
 

@@ -17,35 +17,24 @@ typedef struct {
 } connection_t;
 
 typedef struct{
-	connection_t* left_neighbor;
-	connection_t* right_neighbor;
 	int id;
-	fork_t* left_fork;
-	fork_t* right_fork;
+	connection_t* connections;
+	int connection_count;
+	fork_t* forks;
 } thinker_t;
 
-typedef enum{
-  DIRECTION_LEFT,
-  DIRECTION_RIGHT,
-  DIRECTION_BOTH
-} direction;
 
 typedef struct{
 	Message msg;
-	direction dir;
+	int dir;
 } message_info_t;
 
 typedef struct{
 	int thinkers_count;
 	thinker_t* thinkers;
-	connection_t** connections;
+	connection_t* parent_connections;
 } table_t;
 
-typedef struct {
-    thinker_t* thinker;
-    table_t* table;
-
-}thinker_with_table_wrapper;
 
 typedef struct{
     int left_neighbor;
