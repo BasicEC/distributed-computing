@@ -11,11 +11,13 @@
 
 
 void initPipeLines(table_t* table) {
-	for (int i = 0; i <= table->thinkers_count; i++)
+	for (int i = 0; i < table->thinkers_count; i++)
 		table->thinkers[i].connections = malloc(sizeof(connection_t) * table->thinkers_count);
 
 	for (int i = 0; i < table->thinkers_count; i++){
 		for (int j = 0; j < table->thinkers_count; j++){
+			if (i == j)
+				continue;
 			int arr[2];
 			pipe2(arr, O_NONBLOCK);
 			table->thinkers[i].connections[j].read = arr[0];

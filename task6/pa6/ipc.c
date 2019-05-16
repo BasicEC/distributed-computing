@@ -31,9 +31,9 @@ int writePipe(int fd, const Message* msg) {
 int readPipe(int fd, Message* msg, char isWait) {
 	if (fd == 0 || msg == NULL)
 		return E_PIPE_INVALID_ARGUMENT;
-
+	int readed;
 	while (1) {
-		int readed = read(fd, &msg->s_header, sizeof(MessageHeader));
+		readed = (int)read(fd, &msg->s_header, sizeof(MessageHeader));
 
 		if (readed <= 0) {
 			if (isWait) {
@@ -46,13 +46,13 @@ int readPipe(int fd, Message* msg, char isWait) {
 	}
 
 	if (msg->s_header.s_payload_len > 0) {
-		int readed = 0;
+		readed = 0;
 		do {
-			readed = read(fd, msg->s_payload, msg->s_header.s_payload_len);
+			readed = (int)read(fd, msg->s_payload, msg->s_header.s_payload_len);
 		} while (readed < 0);
 	}
 
-	return 0;
+	return readed;
 }
 
 int send(void * self, local_id dst, const Message * msg) {
@@ -63,9 +63,13 @@ int send(void * self, local_id dst, const Message * msg) {
 
 int try_receive_message(thinker_t* thinker, message_info_t* msg){
 	for (int i = 1 ; i < thinker->connection_count; i++){
-		int result = readPipe(thinker->connections[i].read, msg, 0);
-		if (result > 0)
+		if (i == thinker->id)
+			continue;
+		int result = readPipe(thinker->connections[i].read, &msg->msg, 0);
+		if (result > 0) {
+			msg->dir = i;
 			return result;
+		}
 	}
 
     return 0;
@@ -73,13 +77,18 @@ int try_receive_message(thinker_t* thinker, message_info_t* msg){
 }
 
 int send_multicast(void * self, const Message * msg) {
+	thinker_t* thinker = self;
+    for (int i = 0; i < thinker->connection_count; i++) {
+		if (i == thinker->id)
+			continue;
+		writePipe(thinker->connections[i].write, msg);
+	}
 	return 0;
 }
 
 int receive(void * self, local_id from, Message * msg) {
     thinker_t* thinker = self;
-	int result = readPipe(thinker->connections[from].read, msg, 1);
-    return 0;
+	return readPipe(thinker->connections[from].read, msg, 1);
 }
 
 

@@ -11,7 +11,6 @@ FILE* pLogFile;
 
 table_t* table;
 thinker_t* thinker;
-fork_t* forks;
 int* delayed_transfers;
 int done_count = 0;
 
@@ -100,14 +99,14 @@ int check_delayed_transfers(pid_t pid, int selfId){
 
 void ask_for_forks(pid_t pid){
 	for (int i = 0 ; i < table->thinkers_count; i++){
-		if (!forks[i].enabled)
+		if (!thinker->forks[i].enabled)
 			ask_for_fork(i, pid, thinker->id);
 	}
 }
 
 int is_all_forks_enabled(){
 	for (int i = 0 ; i < table->thinkers_count; i++)
-		if (!forks[i].enabled)
+		if (!thinker->forks[i].enabled)
 			return 0;
 	return 1;
 }
@@ -154,10 +153,10 @@ int process_request(message_info_t* info, pid_t pid, int selfId){
 			return 0;
 		}
 		case ACK:{
-			if (!forks[info->dir].enabled)
+			if (!thinker->forks[info->dir].enabled)
 				return -1;
-			forks[info->dir].enabled = 0;
-			forks[info->dir].dirty = 0;
+			thinker->forks[info->dir].enabled = 0;
+			thinker->forks[info->dir].dirty = 0;
 			Message* msg = prepare_transfer_message(pid, selfId);
 			send(thinker, info->dir, msg);
 			return 0;
@@ -220,7 +219,6 @@ int system_started(pid_t pid, int selfId) {
 	thinker = &table->thinkers[selfId];
 	thinker->id = selfId;
 	delayed_transfers = malloc(sizeof(int) * get_childCount());
-	forks = malloc(sizeof(fork_t) * get_childCount());
 	register_event();
 
 	Message msg;
@@ -232,6 +230,8 @@ int system_started(pid_t pid, int selfId) {
 	send_multicast(thinker, &msg);
 
 	for(int i = 1 ; i < table->thinkers_count; i++){
+		if (i == thinker->id)
+			continue;
 		receive(thinker, (local_id)i, &msg);
 	}
 
@@ -276,11 +276,12 @@ int main(int argc, char **argv) {
 	init_forks();
 	pid_t childPid = 0;
 	int id;
-	for (id = 0; id < childCount; id++) {
+	for (id = 1; id < childCount - 1; id++) {
 		childPid = fork();
 		if (!childPid) {
-			closeUnusedPipes(id, table);
+//			closeUnusedPipes(id, table);
 			system_started(getpid(), id);
+
 			freePipeLines();
 			fclose(get_pipefile());
 			fclose(pLogFile);
@@ -289,6 +290,8 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
+//	closeUnusedPipes(5, table);
+	system_started(getpid(), 5);
 
 	for (int i = 0 ; i < table->thinkers_count; i++)
 		wait(0);
