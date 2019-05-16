@@ -55,66 +55,24 @@ Message* prepare_transfer_message(pid_t pid, int selfId){
 	return msg;
 }
 
-int process_message_info(message_info_t* info, int selfId, pid_t pid){
-	switch (info->msg.s_header.s_type){
+int process_message_info(Message* msg, int selfId, pid_t pid, int from){
+	switch (msg->s_header.s_type){
 		case TRANSFER:{
-			switch (info->dir){
-				case DIRECTION_LEFT:{
-					thinker->left_fork->enabled = 1;
-					thinker->left_fork->dirty = 0;
-					break;
-				}
-				case DIRECTION_RIGHT:{
-					thinker->right_fork->enabled = 1;
-					thinker->right_fork->dirty = 0;
-					break;
-				}
-				default:
-					return -1;
+				thinker->forks[from].enabled = 1;
+				thinker->forks[from].dirty = 0;
+				break;
 			}
-			break;
-		}
 		case ACK:{
-			if (compare_time(info->msg.s_header.s_local_time,info->dir, selfId) < 0){
-				switch (info->dir){
-					case DIRECTION_BOTH:
-						return -1;
-					case DIRECTION_LEFT:{
-						if (!thinker->left_fork->enabled)
-							return -1;
-						thinker->left_fork->enabled = 0;
-						thinker->left_fork->dirty = 0;
-						Message* msg = prepare_transfer_message(pid, selfId);
-						send_to_neighbor(thinker, DIRECTION_LEFT, msg);
-						msg = prepare_ack_message(pid, selfId);
-						send_to_neighbor(thinker, DIRECTION_LEFT, msg);
-						break;
-					}
-					case DIRECTION_RIGHT:{
-						if (!thinker->right_fork->enabled)
-							return -1;
-						thinker->right_fork->enabled = 0;
-						thinker->right_fork->dirty = 0;
-						Message* msg = prepare_transfer_message(pid, selfId);
-						send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
-						msg = prepare_ack_message(pid, selfId);
-						send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
-						break;
-					}
-				}
+			if (compare_time(msg->s_header.s_local_time,from, selfId) < 0){
+				if (!thinker->forks[from].enabled)
+					return -1;
+				thinker->forks[from].enabled = 0;
+				Message* message = prepare_transfer_message(pid, selfId);
+				send(thinker,from, message);
+				message = prepare_ack_message(pid, selfId);
+				send(thinker,from, message);
 			} else {
-				switch(info->dir){
-					case DIRECTION_LEFT:{
-						delayed_transfer->left_neighbor = 1;
-						break;
-					}
-					case DIRECTION_RIGHT:{
-						delayed_transfer->right_neighbor = 1;
-						break;
-					}
-					default:
-						return -1;
-				}
+			    delayed_transfers[from] = 1;
 			}
 			break;
 		}
@@ -122,7 +80,6 @@ int process_message_info(message_info_t* info, int selfId, pid_t pid){
 			done_count++;
 			break;
 		}
-
 		default:
 			return -1;
 	}
@@ -130,19 +87,12 @@ int process_message_info(message_info_t* info, int selfId, pid_t pid){
 }
 
 int check_delayed_transfers(pid_t pid, int selfId){
-	if (delayed_transfer->right_neighbor || delayed_transfer->left_neighbor){
-		Message* msg = prepare_transfer_message(pid, selfId);
-		if (delayed_transfer->left_neighbor){
-		    send_to_neighbor(thinker, DIRECTION_LEFT, msg);
-			thinker->left_fork->enabled = 0;
-			thinker->left_fork->dirty = 0;
-			delayed_transfer->left_neighbor = 0;
-		}
-		if (delayed_transfer->right_neighbor){
-			send_to_neighbor(thinker, DIRECTION_RIGHT, msg);
-			thinker->right_fork->enabled = 0;
-			thinker->right_fork->dirty = 0;
-			delayed_transfer->right_neighbor = 0;
+	for (int i = 1; i < thinker->connection_count; i++){
+		if (delayed_transfers[i - 1]){
+			Message* msg = prepare_transfer_message(pid, selfId);
+			thinker->forks[i-1].enabled = 0;
+			send(thinker, (local_id)i, msg);
+			delayed_transfers[i-1] = 0;
 		}
 	}
 	return 0;
@@ -170,18 +120,19 @@ void eat(pid_t pid, int iteration){
 		char* arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
 		fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
 		fflush(pLogFile);
-		process_message_info(&msg, thinker->id, pid);
+		process_message_info(&msg, thinker->id, pid, from);
 	}
     fprintf(pLogFile, "process - %d now can EAT\n", thinker->id);
 	fflush(pLogFile);
 	//EAT
-	char arr[100];
-	sprintf(arr, log_loop_operation_fmt, thinker->id + 1, iteration + 1, 5);
-	print(arr);
+//	char arr[100];
+//	sprintf(arr, log_loop_operation_fmt, thinker->id + 1, iteration + 1, 5);
+//	print(arr);
 
+	for (int i = 0; i < thinker->connection_count - 1; i++){
+		thinker->forks[i].dirty = 1;
+	}
 
-	thinker->right_fork->dirty = 1;
-	thinker->left_fork->dirty = 1;
 	check_delayed_transfers(pid, thinker->id);
 	register_event();
 }
@@ -233,18 +184,18 @@ void think(pid_t pid, int selfId){
 int system_done(pid_t pid, int selfId) {
 	register_event();
 	// sync
-	message_info_t msg;
-	sprintf(msg.msg.s_payload, log_done_fmt, get_time(), selfId);
+	Message msg;
+	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId);
 
-	msg.msg.s_header.s_local_time = get_time();
-	msg.msg.s_header.s_magic = MESSAGE_MAGIC;
-	msg.msg.s_header.s_payload_len = strlen(msg.msg.s_payload) + 1;
-	msg.msg.s_header.s_type = DONE;
+	msg.s_header.s_local_time = get_time();
+	msg.s_header.s_magic = MESSAGE_MAGIC;
+	msg.s_header.s_payload_len = strlen(msg.s_payload) + 1;
+	msg.s_header.s_type = DONE;
 
-	send_to_neighbor(thinker, DIRECTION_BOTH, &msg.msg);
-	while (done_count < 2){
-		receive_from_neighbor(thinker, DIRECTION_BOTH, &msg);
-		process_message_info(&msg,selfId,pid);
+	send_multicast(thinker, &msg);
+	while (done_count < table->thinkers_count - 1){
+		int from = receive_any(thinker, &msg);
+		process_message_info(&msg,selfId,pid, from);
 	}
 
 	fprintf(pLogFile, log_received_all_done_fmt, get_time(), selfId);
