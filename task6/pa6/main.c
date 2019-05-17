@@ -224,6 +224,8 @@ int system_started(pid_t pid, int selfId) {
 	thinker->id = selfId;
 	delayed_transfers = malloc(sizeof(int) * get_childCount());
 	register_event();
+    fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid,0);
+    fflush(pLogFile);
 
 	Message msg;
 	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid,0);
@@ -239,9 +241,9 @@ int system_started(pid_t pid, int selfId) {
 		receive(thinker, (local_id)i, &msg);
 	}
 
+    fprintf(pLogFile, log_received_all_started_fmt, get_time(), selfId);
+    fflush(pLogFile);
 
-	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid,0);
-	fflush(pLogFile);
 
 	return thinker_work(pid, selfId);
 }
