@@ -136,10 +136,10 @@ void eat_core(int iteration){
 	fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
 	fflush(pLogFile);
 	//EAT
-	char arr[100];
+	char arr[strlen(log_loop_operation_fmt)];
 	sprintf(arr, log_loop_operation_fmt, thinker->id, iteration + 1, 5 * thinker->id);
 	print(arr);
-	for (int i = 0; i < thinker->connection_count - 1; i++)
+	for (int i = 1; i < thinker->connection_count; i++)
 		thinker->forks[i].dirty = 1;
 }
 
