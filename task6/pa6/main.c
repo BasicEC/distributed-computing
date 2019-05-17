@@ -157,7 +157,7 @@ void eat(pid_t pid, int iteration){
 time_t get_end_time(){
 	clock_t start_time;
 	start_time = clock();
-	int delay = ((rand() * 10) % 150000) + 10000;
+	int delay = ((rand() * 10) % 15000) + 1000;
 	if (delay < 0) delay = -delay;
 	return start_time + delay;
 }
