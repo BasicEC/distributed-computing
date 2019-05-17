@@ -112,30 +112,45 @@ int is_all_forks_enabled(){
 	return 1;
 }
 
-void eat(pid_t pid, int iteration){
-    ask_for_forks(pid);
-    if (mutexl) {
-		while (!is_all_forks_enabled()) {
-			Message msg;
-			int from = receive_any(thinker, &msg);
-			char *arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
-			fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
-			fflush(pLogFile);
-			process_message_info(&msg, thinker->id, pid, from);
-		}
+int request_cs(const void* self){
+	pid_t* pid = (pid_t*)self;
+	ask_for_forks(*pid);
+	while (!is_all_forks_enabled()) {
+		Message msg;
+		int from = receive_any(thinker, &msg);
+		char *arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+		fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
+		fflush(pLogFile);
+		process_message_info(&msg, thinker->id, *pid, from);
 	}
-    fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
+	return  0;
+}
+
+int release_cs(const void* self){
+    pid_t* pid = (pid_t*)self;
+	check_delayed_transfers(*pid, thinker->id);
+	return 0;
+}
+
+void eat_core(int iteration){
+	fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
 	fflush(pLogFile);
 	//EAT
 	char arr[100];
 	sprintf(arr, log_loop_operation_fmt, thinker->id, iteration + 1, 5 * thinker->id);
 	print(arr);
-
-	for (int i = 0; i < thinker->connection_count - 1; i++){
+	for (int i = 0; i < thinker->connection_count - 1; i++)
 		thinker->forks[i].dirty = 1;
-	}
+}
 
-	check_delayed_transfers(pid, thinker->id);
+void eat(pid_t pid, int iteration){
+    if (mutexl) {
+    	request_cs(&pid);
+    	eat_core(iteration);
+    	release_cs(&pid);
+	}
+    else
+    	eat_core(iteration);
 	register_event();
 }
 
@@ -144,7 +159,6 @@ time_t get_end_time(){
 	start_time = clock();
 	int delay = ((rand() * 10) % 150000) + 10000;
 	if (delay < 0) delay = -delay;
-//	printf("delay - %d\n", delay);
 	return start_time + delay;
 }
 
