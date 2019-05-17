@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "ipc.h"
-#include "pa6.h"
 #include "common.h"
 #include "connections.h"
 

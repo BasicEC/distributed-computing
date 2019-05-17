@@ -3,9 +3,10 @@
 #include "main.h"
 #include "connections.h"
 #include "util.h"
-#include "pa6.h"
+#include "pa2345.h"
 #include <getopt.h>
 #include <time.h>
+
 pid_t parentPid;
 FILE* pLogFile;
 
@@ -15,12 +16,11 @@ int* delayed_transfers;
 int done_count = 0;
 int mutexl;
 
-void print(char*);
 
 
 int ask_for_fork(int dir,pid_t pid, int selfId){
 	Message msg;
-	sprintf(msg.s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
+	sprintf(msg.s_payload, log_transfer_in_fmt, get_time(), selfId, pid, dir);
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
 	msg.s_header.s_payload_len = (uint16_t)strlen(msg.s_payload) + (uint16_t)1;
@@ -37,7 +37,7 @@ int compare_time(timestamp_t time, int dir, int selfId){
 
 Message* prepare_ack_message(pid_t pid, int selfId){
 	Message* msg = malloc(sizeof(Message));
-	sprintf(msg->s_payload, log_request_for_fork_fmt, get_time(), selfId, pid);
+	sprintf(msg->s_payload, log_transfer_in_fmt, get_time(), selfId, pid, 0);
 	msg->s_header.s_local_time = get_time();
 	msg->s_header.s_magic = MESSAGE_MAGIC;
 	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
@@ -47,7 +47,7 @@ Message* prepare_ack_message(pid_t pid, int selfId){
 
 Message* prepare_transfer_message(pid_t pid, int selfId){
 	Message* msg = malloc(sizeof(Message));
-	sprintf(msg->s_payload, log_responce_with_fork_fmt, get_time(), selfId, pid);
+	sprintf(msg->s_payload, log_transfer_out_fmt, get_time(), selfId, pid, 0);
 	msg->s_header.s_local_time = get_time();
 	msg->s_header.s_magic = MESSAGE_MAGIC;
 	msg->s_header.s_payload_len = (uint16_t)(strlen(msg->s_payload) + 1);
@@ -188,7 +188,7 @@ int system_done(pid_t pid, int selfId) {
 	register_event();
 	// sync
 	Message msg;
-	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId);
+	sprintf(msg.s_payload, log_done_fmt, get_time(), selfId,0);
 
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
@@ -214,7 +214,7 @@ int thinker_work(pid_t pid, int selfId) {
 		eat(pid, i);
 	}
 	// work is done
-	fprintf(pLogFile, log_done_fmt, get_time(), selfId);
+	fprintf(pLogFile, log_done_fmt, get_time(), selfId,0);
 	fflush(pLogFile);
 	return system_done(pid, selfId);
 }
@@ -226,7 +226,7 @@ int system_started(pid_t pid, int selfId) {
 	register_event();
 
 	Message msg;
-	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid);
+	sprintf(msg.s_payload, log_started_fmt, get_time(), selfId, pid, parentPid,0);
 	msg.s_header.s_local_time = get_time();
 	msg.s_header.s_magic = MESSAGE_MAGIC;
 	msg.s_header.s_payload_len = (uint16_t)(strlen(msg.s_payload) + 1);
@@ -240,7 +240,7 @@ int system_started(pid_t pid, int selfId) {
 	}
 
 
-	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid);
+	fprintf(pLogFile, log_started_fmt, get_time(), selfId, pid, parentPid,0);
 	fflush(pLogFile);
 
 	return thinker_work(pid, selfId);
