@@ -13,6 +13,7 @@ table_t* table;
 thinker_t* thinker;
 int* delayed_transfers;
 int done_count = 0;
+int mutexl;
 
 void print(char*);
 
@@ -113,13 +114,15 @@ int is_all_forks_enabled(){
 
 void eat(pid_t pid, int iteration){
     ask_for_forks(pid);
-	while (!is_all_forks_enabled()){
-		Message msg;
-		int from = receive_any(thinker, &msg);
-		char* arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
-		fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
-		fflush(pLogFile);
-		process_message_info(&msg, thinker->id, pid, from);
+    if (mutexl) {
+		while (!is_all_forks_enabled()) {
+			Message msg;
+			int from = receive_any(thinker, &msg);
+			char *arr = msg.s_header.s_type == ACK ? "ASK" : "TRANSFER";
+			fprintf(pLogFile, "process - %d have got %s message from %d\n", thinker->id, arr, from);
+			fflush(pLogFile);
+			process_message_info(&msg, thinker->id, pid, from);
+		}
 	}
     fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
 	fflush(pLogFile);
@@ -265,6 +268,8 @@ void init_forks(){
 int main(int argc, char **argv) {
 	arguments_t arguments = parse_command_line_argument(argc, argv);
 	int childCount = arguments.count + 1;
+	mutexl = arguments.mutex;
+
 	set_childCount(childCount);
 	parentPid = getpid();
 
