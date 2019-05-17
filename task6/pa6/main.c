@@ -87,11 +87,11 @@ int process_message_info(Message* msg, int selfId, pid_t pid, int from){
 
 int check_delayed_transfers(pid_t pid, int selfId){
 	for (int i = 1; i < thinker->connection_count; i++){
-		if (delayed_transfers[i - 1]){
+		if (delayed_transfers[i]){
 			Message* msg = prepare_transfer_message(pid, selfId);
-			thinker->forks[i-1].enabled = 0;
+			thinker->forks[i].enabled = 0;
 			send(thinker, (local_id)i, msg);
-			delayed_transfers[i-1] = 0;
+			delayed_transfers[i] = 0;
 		}
 	}
 	return 0;
@@ -124,9 +124,9 @@ void eat(pid_t pid, int iteration){
     fprintf(pLogFile, "process - %d now can EAT %d time\n", thinker->id, iteration);
 	fflush(pLogFile);
 	//EAT
-//	char arr[100];
-//	sprintf(arr, log_loop_operation_fmt, thinker->id + 1, iteration + 1, 5);
-//	print(arr);
+	char arr[100];
+	sprintf(arr, log_loop_operation_fmt, thinker->id, iteration + 1, 5 * thinker->id);
+	print(arr);
 
 	for (int i = 0; i < thinker->connection_count - 1; i++){
 		thinker->forks[i].dirty = 1;
@@ -139,7 +139,7 @@ void eat(pid_t pid, int iteration){
 time_t get_end_time(){
 	clock_t start_time;
 	start_time = clock();
-	int delay = ((rand() * 10) % 1500000) + 100000;
+	int delay = ((rand() * 10) % 150000) + 10000;
 	if (delay < 0) delay = -delay;
 //	printf("delay - %d\n", delay);
 	return start_time + delay;
@@ -206,7 +206,7 @@ int system_done(pid_t pid, int selfId) {
 
 int thinker_work(pid_t pid, int selfId) {
 
-	for (int i = 0; i < 5; i++){
+	for (int i = 0; i < 5 * thinker->id; i++){
 		think(pid, selfId);
 		eat(pid, i);
 	}
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
 	init_forks();
 	pid_t childPid = 0;
 	int id;
-	for (id = 1; id < childCount - 1; id++) {
+	for (id = 1; id < childCount; id++) {
 		childPid = fork();
 			if (!childPid) {
 			closeUnusedPipes(id, table);
@@ -292,10 +292,8 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-	closeUnusedPipes(5, table);
-	system_started(getpid(), 5);
 
-	for (int i = 0 ; i < table->thinkers_count; i++)
+	for (int i = 1 ; i < table->thinkers_count; i++)
 		wait(0);
     closeUnusedPipes(0, table);
 

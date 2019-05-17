@@ -1,5 +1,4 @@
 
-#include <arpa/nameser.h>
 #include "main.h"
 #include "connections.h"
 #include "util.h"
@@ -46,7 +45,6 @@ int readPipe(int fd, Message* msg, char isWait) {
 	}
 
 	if (msg->s_header.s_payload_len > 0) {
-		readed = 0;
 		do {
 			readed = (int)read(fd, msg->s_payload, msg->s_header.s_payload_len);
 		} while (readed < 0);
